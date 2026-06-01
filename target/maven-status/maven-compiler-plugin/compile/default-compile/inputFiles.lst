@@ -4,8 +4,10 @@ C:\Users\Admin\Documents\duytan\dev\MentorAIEnglish\src\main\java\com\englishai\
 C:\Users\Admin\Documents\duytan\dev\MentorAIEnglish\src\main\java\com\englishai\course\entity\Course.java
 C:\Users\Admin\Documents\duytan\dev\MentorAIEnglish\src\main\java\com\englishai\progress\service\ProgressService.java
 C:\Users\Admin\Documents\duytan\dev\MentorAIEnglish\src\main\java\com\englishai\common\enums\ActivityType.java
+C:\Users\Admin\Documents\duytan\dev\MentorAIEnglish\src\main\java\com\englishai\user\dto\AdminUserUpdateRequest.java
 C:\Users\Admin\Documents\duytan\dev\MentorAIEnglish\src\main\java\com\englishai\common\enums\ConversationStatus.java
 C:\Users\Admin\Documents\duytan\dev\MentorAIEnglish\src\main\java\com\englishai\conversation\entity\Conversation.java
+C:\Users\Admin\Documents\duytan\dev\MentorAIEnglish\src\main\java\com\englishai\user\dto\AdminPasswordResetRequest.java
 C:\Users\Admin\Documents\duytan\dev\MentorAIEnglish\src\main\java\com\englishai\ai\dto\CompletionResult.java
 C:\Users\Admin\Documents\duytan\dev\MentorAIEnglish\src\main\java\com\englishai\common\enums\AttemptStatus.java
 C:\Users\Admin\Documents\duytan\dev\MentorAIEnglish\src\main\java\com\englishai\exercise\repository\ExerciseAnswerRepository.java
@@ -28,7 +30,9 @@ C:\Users\Admin\Documents\duytan\dev\MentorAIEnglish\src\main\java\com\englishai\
 C:\Users\Admin\Documents\duytan\dev\MentorAIEnglish\src\main\java\com\englishai\exercise\entity\ExerciseQuestion.java
 C:\Users\Admin\Documents\duytan\dev\MentorAIEnglish\src\main\java\com\englishai\config\security\HtmxCsrfFilter.java
 C:\Users\Admin\Documents\duytan\dev\MentorAIEnglish\src\main\java\com\englishai\exercise\dto\ExerciseFilter.java
+C:\Users\Admin\Documents\duytan\dev\MentorAIEnglish\src\main\java\com\englishai\user\dto\AdminUserCreateRequest.java
 C:\Users\Admin\Documents\duytan\dev\MentorAIEnglish\src\main\java\com\englishai\exercise\service\ExerciseService.java
+C:\Users\Admin\Documents\duytan\dev\MentorAIEnglish\src\main\java\com\englishai\user\controller\AdminUserController.java
 C:\Users\Admin\Documents\duytan\dev\MentorAIEnglish\src\main\java\com\englishai\exercise\controller\ExerciseController.java
 C:\Users\Admin\Documents\duytan\dev\MentorAIEnglish\src\main\java\com\englishai\dashboard\service\DashboardService.java
 C:\Users\Admin\Documents\duytan\dev\MentorAIEnglish\src\main\java\com\englishai\auth\dto\PasswordMatch.java
@@ -125,4 +129,5 @@ C:\Users\Admin\Documents\duytan\dev\MentorAIEnglish\src\main\java\com\englishai\
 C:\Users\Admin\Documents\duytan\dev\MentorAIEnglish\src\main\java\com\englishai\conversation\exception\GlobalExceptionHandler.java
 C:\Users\Admin\Documents\duytan\dev\MentorAIEnglish\src\main\java\com\englishai\progress\repository\StudySessionRepository.java
 C:\Users\Admin\Documents\duytan\dev\MentorAIEnglish\src\main\java\com\englishai\progress\repository\LearningProgressRepository.java
+C:\Users\Admin\Documents\duytan\dev\MentorAIEnglish\src\main\java\com\englishai\user\dto\AdminUserView.java
 C:\Users\Admin\Documents\duytan\dev\MentorAIEnglish\src\main\java\com\englishai\vocabulary\dto\UserVocabularyDto.java

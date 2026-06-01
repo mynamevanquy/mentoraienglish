@@ -53,6 +53,7 @@ com\englishai\common\enums\MessageRole.class
 com\englishai\progress\dto\ProgressHistoryDto$ProgressHistoryDtoBuilder.class
 com\englishai\exercise\entity\ExerciseAnswer.class
 com\englishai\common\enums\ConversationStatus.class
+com\englishai\user\dto\AdminUserCreateRequest.class
 com\englishai\common\enums\Level.class
 com\englishai\dashboard\dto\RecentActivityDto.class
 com\englishai\auth\dto\PasswordMatch.class
@@ -66,6 +67,7 @@ com\englishai\progress\service\ProgressService.class
 com\englishai\conversation\dto\ConversationDetailDto$ConversationDetailDtoBuilder.class
 com\englishai\ai\client\OpenAiRequest.class
 com\englishai\ai\entity\AuditLog$AuditLogBuilder.class
+com\englishai\user\dto\AdminUserUpdateRequest.class
 com\englishai\auth\controller\HomeController.class
 com\englishai\ai\repository\AuditLogRepository.class
 com\englishai\grammar\entity\GrammarTopic.class
@@ -99,6 +101,7 @@ com\englishai\common\entity\Subscription.class
 com\englishai\exercise\entity\ExerciseQuestion$ExerciseQuestionBuilder.class
 com\englishai\ai\repository\AiLogRepository.class
 com\englishai\vocabulary\service\SM2Algorithm.class
+com\englishai\user\controller\AdminUserController.class
 com\englishai\conversation\entity\Conversation$ConversationBuilder.class
 com\englishai\conversation\service\ConversationService$ParsedAssistantResponse.class
 com\englishai\conversation\dto\GrammarCorrectionDto$GrammarCorrectionDtoBuilder.class
@@ -124,6 +127,7 @@ com\englishai\ai\entity\AiPrompt.class
 com\englishai\ai\exception\OpenAiRateLimitException.class
 com\englishai\dashboard\dto\DashboardSummaryDto$DashboardSummaryDtoBuilder.class
 com\englishai\ai\repository\AiPromptRepository.class
+com\englishai\user\dto\AdminUserView.class
 com\englishai\lesson\repository\LessonRepository.class
 com\englishai\vocabulary\dto\VocabularyStatsDto.class
 com\englishai\exercise\dto\ExerciseDetailDto.class
@@ -157,6 +161,7 @@ com\englishai\ai\client\OpenAiResponse$Usage.class
 com\englishai\course\entity\Course$CourseBuilder.class
 com\englishai\dashboard\dto\WeakTopicDto.class
 com\englishai\dashboard\dto\WeeklyProgressDto$WeeklyProgressDtoBuilder.class
+com\englishai\user\dto\AdminPasswordResetRequest.class
 com\englishai\common\util\MessageHelper.class
 com\englishai\config\thymeleaf\ThymeleafGlobalAdvice.class
 com\englishai\ai\exception\AiRateLimitExceededException.class

@@ -222,6 +222,13 @@
                 <span>Tiến trình học</span>
             </a>
         </li>
+        <!-- Admin users -->
+        <li class="sidebar-item" th:if="${isAdmin}" th:classappend="${currentUri != null && currentUri.startsWith('/admin/users')} ? 'active'">
+            <a th:href="@{/admin/users}">
+                <i class="bi bi-people-fill"></i>
+                <span>Quản lý người dùng</span>
+            </a>
+        </li>
     </ul>
 
     <!-- Sidebar Collapse Trigger Button at Bottom -->

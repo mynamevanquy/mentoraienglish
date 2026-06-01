@@ -173,7 +173,9 @@ public class ConversationService {
                 conversationMessageRepository.findTop20ByConversationIdOrderByCreatedAtDesc(conversation.getId()));
         Collections.reverse(context);
 
-        for (ConversationMessage message : context.stream().limit(MAX_CONTEXT_MESSAGES).toList()) {
+        int contextSize = Math.min(context.size(), MAX_CONTEXT_MESSAGES);
+        for (int i = 0; i < contextSize; i++) {
+            ConversationMessage message = context.get(i);
             String role = message.getRole() == MessageRole.ASSISTANT ? "assistant" : "user";
             messages.add(new OpenAiRequest.Message(role, message.getContent()));
         }

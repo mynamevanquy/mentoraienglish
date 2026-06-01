@@ -19,7 +19,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -132,9 +136,9 @@ public class ProgressService {
 
     public int calculateStreakDays(UUID userId) {
         List<java.sql.Date> sqlDates = studySessionRepository.findDistinctStudyDates(userId, DEFAULT_ZONE.getId());
-        List<LocalDate> dates = sqlDates.stream()
+        Set<LocalDate> dates = sqlDates.stream()
                 .map(java.sql.Date::toLocalDate)
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
 
         LocalDate today = LocalDate.now(DEFAULT_ZONE);
         LocalDate yesterday = today.minusDays(1);

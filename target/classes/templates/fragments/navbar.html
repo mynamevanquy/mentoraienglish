@@ -150,6 +150,7 @@
             <span th:if="${currentUri != null && currentUri.startsWith('/exercises')}">📝 Luyện tập & Đánh giá</span>
             <span th:if="${currentUri != null && currentUri.startsWith('/conversation')}">💬 Phòng Chat AI</span>
             <span th:if="${currentUri != null && currentUri.startsWith('/progress')}">📈 Tiến trình & Thống kê</span>
+            <span th:if="${currentUri != null && currentUri.startsWith('/admin/users')}">👥 Quản lý người dùng</span>
         </h2>
     </div>
 
@@ -160,7 +161,7 @@
                 <div class="user-avatar" th:text="${username != null ? #strings.substring(username, 0, 1).toUpperCase() : ''}">U</div>
                 <div class="user-meta">
                     <span class="user-name" th:text="${username}">Học viên</span>
-                    <span class="user-role">Thành viên Premium</span>
+                    <span class="user-role" th:text="${isAdmin ? 'Quản trị' : 'Học viên'}">Học viên</span>
                 </div>
                 <i class="bi bi-chevron-down text-secondary fs-7 ms-1"></i>
             </button>

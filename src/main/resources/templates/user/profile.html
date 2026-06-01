@@ -212,7 +212,8 @@
                     <div class="profile-avatar-large" th:text="${#strings.substring(user.fullName, 0, 1)}">U</div>
                     <h3 class="profile-name-title" th:text="${user.fullName}">Học viên</h3>
                     <div class="premium-badge">
-                        <i class="bi bi-star-fill"></i> Thành viên Premium
+                        <i class="bi bi-star-fill"></i>
+                        <span th:text="${user.role.name() == 'ADMIN' ? 'Quản trị' : 'Học viên'}">Học viên</span>
                     </div>
                     
                     <div class="profile-info-list">
@@ -222,7 +223,7 @@
                         </div>
                         <div class="info-item">
                             <span class="info-label">Vai trò</span>
-                            <span class="info-value">Học viên</span>
+                            <span class="info-value" th:text="${user.role.name() == 'ADMIN' ? 'Quản trị' : 'Học viên'}">Học viên</span>
                         </div>
                         <div class="info-item" th:if="${user.createdAt != null}">
                             <span class="info-label">Ngày tham gia</span>
@@ -263,7 +264,9 @@
                         <!-- Role Field (Readonly) -->
                         <div class="mb-4">
                             <label for="role" class="form-label">Cấp độ tài khoản (Không thể thay đổi)</label>
-                            <input type="text" id="role" value="Học viên Premium" class="form-control" readonly />
+                            <input type="text" id="role"
+                                   th:value="${user.role.name() == 'ADMIN' ? 'Quản trị' : 'Học viên'}"
+                                   class="form-control" readonly />
                         </div>
 
                         <div class="text-end pt-2">

@@ -1,4 +1,6 @@
 spring:
+  jackson:
+    time-zone: Asia/Ho_Chi_Minh
   cache:
     type: caffeine
     caffeine:
@@ -33,6 +35,7 @@ spring:
         format_sql: true
         jdbc:
           batch_size: 25
+          time_zone: Asia/Ho_Chi_Minh
 
   flyway:
     enabled: true
@@ -51,7 +54,7 @@ spring:
       password: ${REDIS_PASSWORD:}
 
 server:
-  port: ${SERVER_PORT:8080}
+  port: ${SERVER_PORT:8081}
   error:
     whitelabel:
       enabled: false
@@ -59,24 +62,24 @@ server:
     session:
       timeout: ${SESSION_TIMEOUT:30m}
 
-# Gitlawb Opengateway Configuration
+# Gitlawb Opengateway configuration
 openai:
   api:
-    key: ${OPENGATEWAY_API_KEY:mock-key}
+    key: ${OPENGATEWAY_API_KEY:ogw_live_f17bac25931451bf590dd1a52700c239}
     url: https://opengateway.gitlawb.com/v1
 
-# Logging configurations for development
+# Logging configuration
 logging:
   level:
     root: INFO
-    com.englishai: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.orm.results: TRACE
+    com.englishai: INFO
+    org.hibernate.SQL: WARN
+    org.hibernate.orm.results: WARN
 
-# ── Application-level security properties ──────────────────────────────────
+# Application-level security properties
 app:
   security:
-    # Remember-me signing key – override via APP_SECURITY_REMEMBER_ME_KEY env var in production
+    # Remember-me signing key; override via APP_SECURITY_REMEMBER_ME_KEY in production
     remember-me-key: ${APP_SECURITY_REMEMBER_ME_KEY:mentorAIDefaultKey-changeMeInProd}
 
 # Rate limiting using Bucket4j starter

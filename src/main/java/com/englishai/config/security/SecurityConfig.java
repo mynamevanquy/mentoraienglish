@@ -10,6 +10,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 
@@ -42,7 +44,8 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
-                                                   PersistentTokenRepository tokenRepository) throws Exception {
+                                                   PersistentTokenRepository tokenRepository,
+                                                   SessionRegistry sessionRegistry) throws Exception {
         // CSRF – use attribute handler so Thymeleaf ${_csrf} works correctly
         CsrfTokenRequestAttributeHandler csrfHandler = new CsrfTokenRequestAttributeHandler();
 
@@ -51,7 +54,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                         "/", "/login", "/register", "/pricing",
-                        "/css/**", "/js/**", "/images/**", "/favicon.ico",
+                        "/css/**", "/js/**", "/images/**", "/favicon.ico", "/favicon.png",
+                        "/favicon-16.png", "/favicon-32.png", "/favicon-48.png",
+                        "/apple-touch-icon.png",
                         "/webjars/**"
                 ).permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
@@ -94,6 +99,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 .maximumSessions(1)
                 .expiredUrl("/login?expired")
+                .sessionRegistry(sessionRegistry)
             )
 
             // ── CSRF ────────────────────────────────────────────────────────
@@ -142,5 +148,10 @@ public class SecurityConfig {
     @Bean
     public HttpSessionEventPublisher httpSessionEventPublisher() {
         return new HttpSessionEventPublisher();
+    }
+
+    @Bean
+    public SessionRegistry sessionRegistry() {
+        return new SessionRegistryImpl();
     }
 }

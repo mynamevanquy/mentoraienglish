@@ -1,10 +1,6 @@
 package com.englishai.dashboard.service;
 
 import com.englishai.common.enums.ActivityType;
-import com.englishai.common.enums.AttemptStatus;
-import com.englishai.common.enums.ConversationStatus;
-import com.englishai.common.enums.MetricType;
-import com.englishai.conversation.repository.ConversationRepository;
 import com.englishai.dashboard.dto.DashboardSummaryProjection;
 import com.englishai.dashboard.dto.DashboardSummaryDto;
 import com.englishai.dashboard.dto.RecentActivityDto;
@@ -13,35 +9,32 @@ import com.englishai.dashboard.dto.WeeklyProgressDto;
 import com.englishai.exercise.entity.ExerciseAttempt;
 import com.englishai.exercise.repository.ExerciseAttemptRepository;
 import com.englishai.progress.entity.StudySession;
-import com.englishai.progress.repository.LearningProgressRepository;
 import com.englishai.progress.repository.StudySessionRepository;
-import com.englishai.progress.service.ProgressService;
-import com.englishai.vocabulary.repository.UserVocabularyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
+import java.sql.Date;
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.TemporalAdjusters;
-import java.time.DayOfWeek;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class DashboardService {
 
     private final StudySessionRepository studySessionRepository;
-    private final LearningProgressRepository learningProgressRepository;
-    private final UserVocabularyRepository userVocabularyRepository;
     private final ExerciseAttemptRepository exerciseAttemptRepository;
-    private final ConversationRepository conversationRepository;
-    private final ProgressService progressService;
 
     private static final ZoneId DEFAULT_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
@@ -96,7 +89,7 @@ public class DashboardService {
         List<StudySession> studySessions = studySessionRepository.findRecentByUser(userId, pageable);
         List<ExerciseAttempt> exerciseAttempts = exerciseAttemptRepository.findRecentByUser(userId, pageable);
 
-        List<RecentActivityDto> activityFeed = new ArrayList<>();
+        List<RecentActivityDto> activityFeed = new ArrayList<>(studySessions.size() + exerciseAttempts.size());
 
         // Map study sessions
         for (StudySession session : studySessions) {
@@ -128,7 +121,7 @@ public class DashboardService {
         return activityFeed.stream()
                 .sorted(Comparator.comparing(RecentActivityDto::getStartedAt).reversed())
                 .limit(limit)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -150,8 +143,8 @@ public class DashboardService {
         for (Object[] row : results) {
             if (row[0] != null) {
                 LocalDate date;
-                if (row[0] instanceof java.sql.Date) {
-                    date = ((java.sql.Date) row[0]).toLocalDate();
+                if (row[0] instanceof Date sqlDate) {
+                    date = sqlDate.toLocalDate();
                 } else if (row[0] instanceof LocalDate) {
                     date = (LocalDate) row[0];
                 } else {

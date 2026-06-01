@@ -1,4 +1,6 @@
 spring:
+  jackson:
+    time-zone: Asia/Ho_Chi_Minh
   threads:
     virtual:
       enabled: true
@@ -25,6 +27,7 @@ spring:
         format_sql: false
         jdbc:
           batch_size: 50
+          time_zone: Asia/Ho_Chi_Minh
         order_inserts: true
         order_updates: true
 
