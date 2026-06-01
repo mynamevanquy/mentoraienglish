@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/auth}">
+<head>
+    <title>Đăng ký tài khoản</title>
+</head>
+<body>
+    <div layout:fragment="auth-content">
+        <h1>Tạo tài khoản</h1>
+        <p class="subtitle">Bắt đầu học tiếng Anh miễn phí với AI ngay hôm nay.</p>
+
+        <!-- Register Form -->
+        <form id="registerForm" th:action="@{/register}" th:object="${registerRequest}" th:method="post" novalidate>
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+            <!-- Full Name -->
+            <div class="mb-3 text-start" th:classappend="${#fields.hasErrors('fullName')} ? 'has-error'">
+                <label for="fullName" class="form-label">Họ và tên</label>
+                <input type="text" id="fullName" name="fullName" class="form-control"
+                       th:value="${registerRequest?.fullName}"
+                       placeholder="Nguyễn Văn A"
+                       autocomplete="name" required/>
+                <div class="field-error" th:if="${#fields.hasErrors('fullName')}">
+                    <i class="bi bi-exclamation-circle-fill"></i>
+                    <span th:errors="*{fullName}"></span>
+                </div>
+            </div>
+
+            <!-- Email -->
+            <div class="mb-3 text-start" th:classappend="${#fields.hasErrors('email')} ? 'has-error'">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" id="email" name="email" class="form-control"
+                       th:value="${registerRequest?.email}"
+                       placeholder="you@example.com"
+                       autocomplete="email" required/>
+                <div class="field-error" th:if="${#fields.hasErrors('email')}">
+                    <i class="bi bi-exclamation-circle-fill"></i>
+                    <span th:errors="*{email}"></span>
+                </div>
+            </div>
+
+            <!-- Password -->
+            <div class="mb-3 text-start" th:classappend="${#fields.hasErrors('password')} ? 'has-error'">
+                <label for="password" class="form-label">Mật khẩu</label>
+                <input type="password" id="password" name="password" class="form-control"
+                       placeholder="Tối thiểu 8 ký tự"
+                       autocomplete="new-password" required/>
+                <p class="text-secondary mt-1 mb-0" style="font-size: 11px;">Tối thiểu 8 ký tự. Nên kết hợp chữ hoa, số và ký tự đặc biệt.</p>
+                <div class="field-error" th:if="${#fields.hasErrors('password')}">
+                    <i class="bi bi-exclamation-circle-fill"></i>
+                    <span th:errors="*{password}"></span>
+                </div>
+            </div>
+
+            <!-- Confirm Password -->
+            <div class="mb-4 text-start" th:classappend="${#fields.hasErrors('confirmPassword')} ? 'has-error'">
+                <label for="confirmPassword" class="form-label">Xác nhận mật khẩu</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" class="form-control"
+                       placeholder="Nhập lại mật khẩu"
+                       autocomplete="new-password" required/>
+                <div class="field-error" th:if="${#fields.hasErrors('confirmPassword')}">
+                    <i class="bi bi-exclamation-circle-fill"></i>
+                    <span th:errors="*{confirmPassword}"></span>
+                </div>
+            </div>
+
+            <button type="submit" id="registerBtn" class="btn-brand">Tạo tài khoản</button>
+        </form>
+
+        <div class="divider">đã có tài khoản?</div>
+
+        <div class="auth-footer">
+            <a th:href="@{/login}">← Quay lại đăng nhập</a>
+        </div>
+    </div>
+</body>
+</html>

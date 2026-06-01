@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/main}">
+<head>
+    <title>Học từ vựng</title>
+    <style>
+        .learn-header {
+            margin-bottom: 32px;
+        }
+
+        .learn-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .learn-subtitle {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        .level-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        @media (max-width: 768px) {
+            .level-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .level-card {
+            background: var(--surface-card);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .level-card:hover {
+            border-color: var(--brand-primary);
+            transform: translateY(-2px);
+        }
+
+        .level-card-icon {
+            font-size: 36px;
+            margin-bottom: 12px;
+        }
+
+        .level-card-name {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .level-card-count {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .level-card-btn {
+            margin-top: 16px;
+        }
+
+        .vocab-muted {
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <header class="learn-header d-flex justify-content-between align-items-start gap-3">
+        <div>
+            <h1 class="learn-title">Học từ vựng mới</h1>
+            <p class="learn-subtitle mb-0">Chọn cấp độ để bắt đầu học những từ vựng bạn chưa biết.</p>
+        </div>
+        <div class="d-flex gap-2 flex-shrink-0">
+            <a class="btn btn-outline-light" th:href="@{/vocabulary/statistics}">
+                <i class="bi bi-graph-up"></i> Thống kê
+            </a>
+            <a class="btn btn-outline-light" th:href="@{/vocabulary}">
+                <i class="bi bi-arrow-left"></i> Danh sách
+            </a>
+        </div>
+    </header>
+
+    <div class="level-cards">
+        <div class="level-card" th:each="entry : ${levelCounts}">
+            <div class="level-card-icon">
+                <i class="bi bi-book" th:if="${entry.key == 'BEGINNER'}"></i>
+                <i class="bi bi-book-half" th:if="${entry.key == 'INTERMEDIATE'}"></i>
+                <i class="bi bi-book-fill" th:if="${entry.key == 'ADVANCED'}"></i>
+            </div>
+            <div class="level-card-name">
+                <span th:if="${entry.key == 'BEGINNER'}">Cơ bản</span>
+                <span th:if="${entry.key == 'INTERMEDIATE'}">Trung cấp</span>
+                <span th:if="${entry.key == 'ADVANCED'}">Nâng cao</span>
+            </div>
+            <div class="level-card-count">
+                <span th:text="${entry.value}">0</span> từ chưa học
+            </div>
+            <button class="btn btn-primary level-card-btn"
+                    th:if="${entry.value > 0}"
+                    th:attr="hx-get=@{/vocabulary/learn/session(level=${entry.key})}"
+                    hx-target="#learn-area"
+                    hx-swap="innerHTML">
+                <i class="bi bi-play-fill"></i> Bắt đầu học
+            </button>
+            <span class="badge bg-secondary level-card-btn" th:if="${entry.value == 0}">Đã học hết</span>
+        </div>
+    </div>
+
+    <div id="learn-area"></div>
+</div>
+</body>
+</html>

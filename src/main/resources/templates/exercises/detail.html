@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/main}">
+<head>
+    <title>Chi tiết bài tập</title>
+    <style>.exercise-muted { color: var(--text-secondary); }</style>
+</head>
+<body>
+<div layout:fragment="content">
+    <section class="dash-card">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
+            <div>
+                <div class="d-flex gap-2 mb-3">
+                    <span class="badge text-bg-info" th:text="${@messageHelper.exerciseType(detail.exercise.exerciseType)}">TYPE</span>
+                <span class="badge text-bg-secondary" th:text="${@messageHelper.level(detail.exercise.difficultyLevel)}">LEVEL</span>
+                </div>
+                <h1 class="h3" th:text="${detail.exercise.title}">Exercise title</h1>
+                <p class="exercise-muted mb-0" th:text="${detail.exercise.description}">Description</p>
+            </div>
+            <form th:action="@{/exercises/{id}/start(id=${detail.exercise.id})}" th:method="post">
+                <button class="btn btn-primary" type="submit">
+                    <i class="bi bi-play-fill"></i> Bắt đầu làm bài
+                </button>
+            </form>
+        </div>
+
+        <div class="list-group list-group-flush">
+            <div class="list-group-item bg-transparent text-light border-secondary"
+                 th:each="question : ${detail.questions}">
+                <div class="exercise-muted small" th:text="${'Câu hỏi ' + (question.orderIndex + 1)}">Question 1</div>
+                <div th:text="${question.questionText}">Question text</div>
+            </div>
+        </div>
+    </section>
+</div>
+</body>
+</html>

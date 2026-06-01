@@ -1,0 +1,35 @@
+<div xmlns:th="http://www.thymeleaf.org">
+    <div th:if="${errorMessage != null}" class="text-warning">
+        <div class="d-flex gap-2 align-items-center mb-2">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>Chưa tạo được giải thích</strong>
+        </div>
+        <p class="mb-0" th:text="${errorMessage}">Có lỗi xảy ra.</p>
+    </div>
+
+    <th:block th:if="${errorMessage == null}">
+    <h3 class="h6" th:text="${explanation.topic()}">Topic</h3>
+    <p class="grammar-muted" th:text="${explanation.summary()}">Summary</p>
+
+    <div th:if="${!explanation.rules().isEmpty()}">
+        <div class="small text-uppercase grammar-muted mb-2">Quy tắc</div>
+        <ul class="ps-3">
+            <li th:each="rule : ${explanation.rules()}" th:text="${rule}">Rule</li>
+        </ul>
+    </div>
+
+    <div th:if="${!explanation.commonMistakes().isEmpty()}">
+        <div class="small text-uppercase grammar-muted mb-2">Lỗi thường gặp</div>
+        <ul class="ps-3">
+            <li th:each="mistake : ${explanation.commonMistakes()}" th:text="${mistake}">Mistake</li>
+        </ul>
+    </div>
+
+    <div th:if="${!explanation.examples().isEmpty()}">
+        <div class="small text-uppercase grammar-muted mb-2">Ví dụ</div>
+        <ul class="ps-3 mb-0">
+            <li th:each="example : ${explanation.examples()}" th:text="${example}">Example</li>
+        </ul>
+    </div>
+    </th:block>
+</div>

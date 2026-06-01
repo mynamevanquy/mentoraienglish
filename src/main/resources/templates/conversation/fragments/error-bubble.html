@@ -1,0 +1,10 @@
+<div xmlns:th="http://www.thymeleaf.org"
+     th:fragment="error"
+     class="d-flex justify-content-start">
+    <div class="rounded-4 p-3 bubble-error" style="max-width: min(760px, 86%); white-space: pre-wrap;">
+        <div class="small fw-semibold mb-2" style="color: #ff6b6b;">
+            <i class="bi bi-exclamation-triangle me-1"></i> Lỗi
+        </div>
+        <div th:text="${message}">Đã xảy ra lỗi.</div>
+    </div>
+</div>

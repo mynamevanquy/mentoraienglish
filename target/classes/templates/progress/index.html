@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/main}">
+<head>
+    <title>Tiến trình học tập</title>
+    <style>
+        .progress-header {
+            margin-bottom: 32px;
+        }
+
+        .progress-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .progress-subtitle {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        /* Level Section styling */
+        .level-overview-card {
+            background: var(--surface-card);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            margin-bottom: 32px;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        @media (max-width: 768px) {
+            .level-overview-card {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                gap: 24px;
+            }
+        }
+
+        .level-badge-large {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: var(--brand-gradient);
+            box-shadow: 0 8px 32px rgba(108, 99, 255, 0.35);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .level-badge-lbl {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.8;
+        }
+
+        .level-badge-val {
+            font-size: 42px;
+            line-height: 1.1;
+        }
+
+        .level-progress-info {
+            flex: 1;
+            width: 100%;
+        }
+
+        .level-headline {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .level-subline {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .level-bar-wrapper {
+            margin-bottom: 8px;
+        }
+
+        .level-bar-outer {
+            height: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .level-bar-inner {
+            height: 100%;
+            background: var(--brand-gradient);
+            border-radius: 6px;
+            transition: width 0.5s ease-out;
+        }
+
+        .level-bar-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-top: 8px;
+        }
+
+        /* Filter bar */
+        .filter-card {
+            background: var(--surface-card);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-lg);
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        select, input[type="date"] {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--surface-border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            padding: 10px 14px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s, background-color 0.2s;
+            font-family: inherit;
+        }
+
+        select:focus, input[type="date"]:focus {
+            border-color: var(--brand-primary);
+            background-color: rgba(108, 99, 255, 0.1);
+        }
+
+        /* Chart container */
+        .chart-card {
+            background: var(--surface-card);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            min-height: 400px;
+        }
+
+        .loading-shimmer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 300px;
+            color: var(--text-secondary);
+        }
+
+        .loading-shimmer::after {
+            content: 'Đang tải biểu đồ...';
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div layout:fragment="content">
+        <header class="progress-header">
+            <h1 class="progress-title">Tiến trình học tập</h1>
+            <p class="progress-subtitle">Theo dõi số liệu thống kê chi tiết và phân tích xu hướng học tập.</p>
+        </header>
+
+        <!-- Level Overview -->
+        <div class="level-overview-card">
+            <div class="level-badge-large">
+                <span class="level-badge-lbl">Cấp độ</span>
+                <span class="level-badge-val" th:text="${currentLevel}">1</span>
+            </div>
+            <div class="level-progress-info">
+                <h2 class="level-headline" th:text="${'Chúc mừng! Bạn đã đạt Cấp độ ' + currentLevel}">Cấp độ 1</h2>
+                <p class="level-subline" th:if="${currentLevel < 7}"
+                   th:text="${'Tích lũy thêm ' + xpToNextLevel + ' XP để lên Cấp độ ' + (currentLevel + 1)}">
+                   Cần thêm XP để lên cấp.
+                </p>
+                <p class="level-subline text-success" th:if="${currentLevel == 7}">
+                    🎉 Bạn đã đạt Cấp độ tối đa! Đỉnh cao học tập!
+                </p>
+                <div class="level-bar-wrapper">
+                    <div class="level-bar-outer">
+                        <div class="level-bar-inner" th:style="'width: ' + ${progressPercentage} + '%'"></div>
+                    </div>
+                    <div class="level-bar-text">
+                        <span th:text="${totalXp + ' XP'}">0 XP</span>
+                        <span th:if="${currentLevel < 7}" th:text="${nextLevelThreshold + ' XP'}">100 XP</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Controls bar -->
+        <form class="filter-card" id="filter-form">
+            <!-- Metric Selector -->
+            <div class="filter-group" style="flex: 1; min-width: 200px;">
+                <span class="filter-label">Chỉ số tiến trình</span>
+                <select name="metric"
+                        hx-get="/progress/chart"
+                        hx-trigger="change, load"
+                        hx-target="#progress-chart-container"
+                        hx-include="#filter-form">
+                    <option th:each="m : ${metricTypes}"
+                            th:value="${m.name()}"
+                            th:selected="${m.name() == 'XP_TOTAL'}"
+                            th:text="${m.name() == 'XP_TOTAL' ? 'Tổng điểm kinh nghiệm (XP)' :
+                                       (m.name() == 'VOCABULARY_MASTERED' ? 'Từ vựng đã nắm vững' :
+                                        (m.name() == 'EXERCISES_COMPLETED' ? 'Bài tập đã hoàn thành' :
+                                         (m.name() == 'STREAK_DAYS' ? 'Chuỗi ngày liên tục' :
+                                          (m.name() == 'LESSONS_COMPLETED' ? 'Bài học đã hoàn thành' : m.name()))))}">
+                    </option>
+                </select>
+            </div>
+
+            <!-- Start Date -->
+            <div class="filter-group">
+                <span class="filter-label">Từ ngày</span>
+                <input type="date" name="from"
+                       th:value="${from}"
+                       hx-get="/progress/chart"
+                       hx-trigger="change"
+                       hx-target="#progress-chart-container"
+                       hx-include="#filter-form" />
+            </div>
+
+            <!-- End Date -->
+            <div class="filter-group">
+                <span class="filter-label">Đến ngày</span>
+                <input type="date" name="to"
+                       th:value="${to}"
+                       hx-get="/progress/chart"
+                       hx-trigger="change"
+                       hx-target="#progress-chart-container"
+                       hx-include="#filter-form" />
+            </div>
+        </form>
+
+        <!-- Detailed Line Chart -->
+        <div class="chart-card">
+            <div id="progress-chart-container">
+                <div class="loading-shimmer"></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<nav th:fragment="pagination (currentPage, totalPages, baseUrl, targetId)" 
+     th:if="${totalPages > 1}" 
+     aria-label="Phân trang" 
+     xmlns:th="http://www.thymeleaf.org">
+    <style>
+        .pagination {
+            --bs-pagination-bg: rgba(255, 255, 255, 0.03);
+            --bs-pagination-border-color: var(--surface-border);
+            --bs-pagination-color: var(--text-secondary);
+            --bs-pagination-hover-color: var(--text-primary);
+            --bs-pagination-hover-bg: rgba(255, 255, 255, 0.08);
+            --bs-pagination-hover-border-color: var(--surface-border);
+            --bs-pagination-active-color: #fff;
+            --bs-pagination-active-bg: var(--brand-primary);
+            --bs-pagination-active-border-color: var(--brand-primary);
+            --bs-pagination-disabled-color: rgba(240, 240, 255, 0.25);
+            --bs-pagination-disabled-bg: transparent;
+            --bs-pagination-disabled-border-color: var(--surface-border);
+            gap: 4px;
+        }
+
+        .page-link {
+            border-radius: 8px !important;
+            transition: var(--transition-smooth);
+            font-size: 14px;
+            font-weight: 500;
+        }
+    </style>
+    <ul class="pagination justify-content-center mb-0">
+        <!-- Previous Page -->
+        <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+            <a class="page-link" 
+               href="#" 
+               th:attr="hx-get=${baseUrl + (baseUrl.contains('?') ? '&page=' : '?page=') + (currentPage - 1)}, hx-target=${targetId}"
+               hx-swap="innerHTML"
+               aria-label="Trước">
+                <span aria-hidden="true"><i class="bi bi-chevron-left"></i></span>
+            </a>
+        </li>
+
+        <!-- Page Numbers -->
+        <li class="page-item" 
+            th:each="pageNo : ${#numbers.sequence(0, totalPages - 1)}" 
+            th:classappend="${currentPage == pageNo} ? 'active'">
+            <a class="page-link" 
+               href="#" 
+               th:text="${pageNo + 1}"
+               th:attr="hx-get=${baseUrl + (baseUrl.contains('?') ? '&page=' : '?page=') + pageNo}, hx-target=${targetId}"
+               hx-swap="innerHTML">
+               1
+            </a>
+        </li>
+
+        <!-- Next Page -->
+        <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
+            <a class="page-link" 
+               href="#" 
+               th:attr="hx-get=${baseUrl + (baseUrl.contains('?') ? '&page=' : '?page=') + (currentPage + 1)}, hx-target=${targetId}"
+               hx-swap="innerHTML"
+               aria-label="Sau">
+                <span aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
+            </a>
+        </li>
+    </ul>
+</nav>

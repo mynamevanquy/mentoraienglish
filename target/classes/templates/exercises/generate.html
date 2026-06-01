@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/main}">
+<head>
+    <title>Tạo bài tập AI</title>
+    <style>
+        .exercise-muted { color: var(--text-secondary); }
+        #generate-spinner { display: none; align-items: center; }
+        #generate-spinner.htmx-request { display: inline-flex; }
+        button.htmx-request .indicator-label { opacity: 0.5; }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <section class="dash-card" style="max-width: 760px;">
+        <h1 class="h3 mb-1">Tạo bài tập với AI</h1>
+        <p class="exercise-muted mb-4">Tự động tạo các bộ câu hỏi và luyện tập dựa trên công nghệ AI.</p>
+
+        <form th:action="@{/exercises/generate}"
+              th:method="post"
+              th:object="${generateExerciseRequest}"
+              hx-post="/exercises/generate"
+              hx-target="#generate-status"
+              hx-swap="innerHTML"
+              hx-indicator="#generate-spinner">
+            <div class="mb-3">
+                <label class="form-label" for="topic">Chủ đề</label>
+                <input class="form-control" id="topic" type="text" th:field="*{topic}" placeholder="Ví dụ: Past simple, từ vựng du lịch, phỏng vấn xin việc...">
+                <div class="text-warning small" th:if="${#fields.hasErrors('topic')}" th:errors="*{topic}">Topic error</div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label" for="exerciseType">Dạng bài</label>
+                    <select class="form-select" id="exerciseType" th:field="*{exerciseType}">
+                        <option th:each="type : ${exerciseTypes}" th:value="${type.name()}" th:text="${type.name()}">MULTIPLE_CHOICE</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="difficulty">Độ khó</label>
+                    <select class="form-select" id="difficulty" th:field="*{difficulty}">
+                        <option th:each="level : ${levels}" th:value="${level.name()}" th:text="${level.name()}">BEGINNER</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="questionCount">Số lượng câu hỏi</label>
+                    <input class="form-control" id="questionCount" type="number" min="1" max="20" th:field="*{questionCount}">
+                    <div class="text-warning small" th:if="${#fields.hasErrors('questionCount')}" th:errors="*{questionCount}">Count error</div>
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-3 mt-4">
+                <button class="btn btn-primary" type="submit">
+                    <span class="indicator-label"><i class="bi bi-stars"></i> Bắt đầu tạo</span>
+                </button>
+                <div id="generate-spinner" class="htmx-indicator">
+                    <div class="spinner-border spinner-border-sm text-light" role="status"></div>
+                    <span class="ms-2">Đang tạo bài tập...</span>
+                </div>
+                <div id="generate-status" class="exercise-muted">Quá trình tạo đề bài bằng AI có thể mất vài giây.</div>
+            </div>
+        </form>
+    </section>
+</div>
+</body>
+</html>

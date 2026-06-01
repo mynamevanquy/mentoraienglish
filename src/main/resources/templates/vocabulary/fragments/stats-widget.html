@@ -1,0 +1,28 @@
+<div xmlns:th="http://www.thymeleaf.org" 
+     th:with="totalRaw=${stats != null && !stats.isEmpty() ? #aggregates.sum(stats.values()) : 0}, total=${totalRaw != null ? totalRaw : 0}">
+    
+    <div th:if="${stats == null || stats.isEmpty() || total == 0}" class="vocab-muted text-center py-2">
+        Chưa có từ vựng nào được lưu.
+    </div>
+
+    <div th:if="${stats != null && !stats.isEmpty() && total > 0}" class="d-grid gap-3">
+        <div th:each="entry : ${stats}" class="d-grid gap-1">
+            <div class="d-flex justify-content-between small">
+                <span class="fw-medium text-light" th:text="${entry.key}">New</span>
+                <span class="vocab-muted" th:text="${entry.value} + ' (' + ${#numbers.formatDecimal(entry.value * 100.0 / total, 1, 0)} + '%)'">0 (0%)</span>
+            </div>
+            <div class="progress" style="height: 6px; background: rgba(255, 255, 255, 0.05); border-radius: 10px; overflow: hidden;">
+                <div class="progress-bar"
+                     th:style="'width: ' + (${total > 0} ? ${entry.value * 100.0 / total} : 0) + '%; background-color: ' + 
+                              (${entry.key == 'Mới'} ? '#ef4444' : 
+                              (${entry.key == 'Đang học'} ? '#f59e0b' : 
+                              (${entry.key == 'Quen thuộc'} ? '#3b82f6' : 
+                              (${entry.key == 'Tốt'} ? '#6c63ff' : 
+                              (${entry.key == 'Thành thạo'} ? '#10b981' : '#8b5cf6')))))"
+                     th:attr="aria-valuenow=${entry.value}"
+                     aria-valuemin="0"
+                     th:aria-valuemax="${total}"></div>
+            </div>
+        </div>
+    </div>
+</div>

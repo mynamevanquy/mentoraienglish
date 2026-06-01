@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/main}">
+<head>
+    <title>Tổng quan</title>
+    <style>
+        .welcome-header {
+            margin-bottom: 32px;
+        }
+
+        .welcome-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .welcome-subtitle {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        /* Grid Layouts */
+        .dashboard-grid-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .dashboard-grid-split {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        @media (max-width: 992px) {
+            .dashboard-grid-split {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card-header-flex {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .loading-shimmer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 120px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .loading-shimmer::after {
+            content: 'Đang tải dữ liệu...';
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div layout:fragment="content">
+        <!-- Greeting Header -->
+        <header class="welcome-header">
+            <h1 class="welcome-title">Chào, <span th:text="${user.fullName}">Học viên</span>! 👋</h1>
+            <p class="welcome-subtitle">Hôm nay là một ngày tuyệt vời để nâng cấp trình độ tiếng Anh của bạn.</p>
+        </header>
+
+        <!-- 4 Summary Cards (Loaded asynchronously via HTMX) -->
+        <div id="summary-section"
+             class="dashboard-grid-stats"
+             hx-get="/dashboard/summary"
+             hx-trigger="load"
+             hx-swap="outerHTML">
+             <!-- Placeholder during load -->
+             <div class="dash-card"><div class="loading-shimmer"></div></div>
+             <div class="dash-card"><div class="loading-shimmer"></div></div>
+             <div class="dash-card"><div class="loading-shimmer"></div></div>
+             <div class="dash-card"><div class="loading-shimmer"></div></div>
+        </div>
+
+        <!-- Middle Section: Chart + Weak Topics -->
+        <div class="dashboard-grid-split">
+            <!-- Weekly Study Minutes Chart -->
+            <div class="dash-card" style="min-height: 380px;">
+                <div class="card-header-flex">
+                    <h2 class="card-title">⏰ Thời gian học tuần này</h2>
+                </div>
+                <div id="weekly-chart-container"
+                     hx-get="/dashboard/weekly-chart"
+                     hx-trigger="load"
+                     hx-swap="innerHTML"
+                     style="height: 280px; display: flex; align-items: center; justify-content: center;">
+                     <div class="loading-shimmer"></div>
+                </div>
+            </div>
+
+            <!-- Weak Grammar Topics -->
+            <div class="dash-card" style="min-height: 380px;">
+                <div class="card-header-flex">
+                    <h2 class="card-title">⚠️ Chủ điểm ngữ pháp cần cải thiện</h2>
+                </div>
+                <div id="weak-topics-container"
+                     hx-get="/dashboard/weak-topics"
+                     hx-trigger="load"
+                     hx-swap="innerHTML">
+                     <div class="loading-shimmer"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Section: Recent Activity Timeline -->
+        <div class="dash-card">
+            <div class="card-header-flex">
+                <h2 class="card-title">🕒 Hoạt động gần đây</h2>
+            </div>
+            <div id="recent-activity-container"
+                 hx-get="/dashboard/recent-activity"
+                 hx-trigger="load"
+                 hx-swap="innerHTML">
+                 <div class="loading-shimmer" style="height: 150px;"></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

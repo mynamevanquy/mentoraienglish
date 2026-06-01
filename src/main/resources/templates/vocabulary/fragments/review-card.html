@@ -1,0 +1,198 @@
+<div xmlns:th="http://www.thymeleaf.org" style="width: 100%;">
+    <style>
+        .review-card {
+            background: var(--surface-card);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-lg);
+            padding: 32px 24px;
+            max-width: 680px;
+            margin: 0 auto;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        .quality-buttons {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .quality-form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 80px;
+        }
+
+        .quality-btn {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: 2px solid var(--surface-border);
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .quality-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+        }
+
+        .quality-0, .quality-1 { border-color: #ef4444; color: #ef4444; }
+        .quality-0:hover, .quality-1:hover { background: rgba(239, 68, 68, 0.15); }
+        .quality-2 { border-color: #f59e0b; color: #f59e0b; }
+        .quality-2:hover { background: rgba(245, 158, 11, 0.15); }
+        .quality-3 { border-color: #3b82f6; color: #3b82f6; }
+        .quality-3:hover { background: rgba(59, 130, 246, 0.15); }
+        .quality-4 { border-color: #10b981; color: #10b981; }
+        .quality-4:hover { background: rgba(16, 185, 129, 0.15); }
+        .quality-5 { border-color: #6c63ff; color: #6c63ff; }
+        .quality-5:hover { background: rgba(108, 99, 255, 0.15); }
+
+        .quality-desc {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .vocab-muted {
+            color: var(--text-secondary);
+        }
+
+        .review-empty {
+            background: var(--surface-card);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-lg);
+            max-width: 680px;
+            margin: 0 auto;
+        }
+    </style>
+
+    <article th:if="${userVocabulary != null}"
+             class="review-card"
+             id="current-review-card">
+        
+        <!-- Question Section (Visible first) -->
+        <div class="text-center mb-2">
+            <div class="vocab-muted mb-2 fs-5" th:text="${userVocabulary.pronunciation}">/pronunciation/</div>
+            <h2 style="font-size: 48px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 8px; color: var(--text-primary);"
+                th:text="${userVocabulary.word}">Word</h2>
+        </div>
+
+        <!-- Show Answer Button Container -->
+        <div class="d-flex justify-content-center my-4" id="show-answer-btn-container">
+            <button class="btn btn-primary btn-lg px-5 py-3 rounded-pill"
+                    style="font-weight: 600; box-shadow: 0 4px 15px rgba(108, 99, 255, 0.3);"
+                    onclick="document.getElementById('answer-section').classList.remove('d-none'); document.getElementById('show-answer-btn-container').classList.add('d-none');">
+                <i class="bi bi-eye-fill me-2"></i> Hiện đáp án
+            </button>
+        </div>
+
+        <!-- Answer Section (Hidden initially) -->
+        <div id="answer-section" class="d-none border-top border-secondary-subtle pt-4 mt-3">
+            <div class="text-center mb-4">
+                <span class="badge bg-secondary px-3 py-2 fs-6 mb-3" th:text="${userVocabulary.partOfSpeech}">noun</span>
+                <p class="lead mb-2 fw-semibold" style="color: var(--text-primary);" th:text="${userVocabulary.definitionEn}">English definition</p>
+                <p class="vocab-muted fs-5 mb-0" th:text="${userVocabulary.definitionVi}">Vietnamese translation</p>
+            </div>
+
+            <!-- Examples -->
+            <div th:if="${userVocabulary.examples != null && !userVocabulary.examples.isEmpty()}" class="mb-4 bg-white bg-opacity-5 p-3 rounded-3">
+                <h6 class="text-uppercase small vocab-muted fw-bold mb-2">Ví dụ</h6>
+                <div th:each="ex : ${userVocabulary.examples}" class="mb-2 border-bottom border-secondary-subtle pb-2 last-border-0">
+                    <p class="mb-1 fst-italic" th:text="${ex.get('en') ?: ex.get('sentence') ?: ''}">Example</p>
+                    <p class="vocab-muted small mb-0" th:text="${ex.get('vi') ?: ex.get('translation') ?: ''}">Translation</p>
+                </div>
+            </div>
+
+            <!-- Synonyms & Antonyms -->
+            <div class="row mb-4"
+                 th:if="${(userVocabulary.synonyms != null && !userVocabulary.synonyms.isEmpty()) || (userVocabulary.antonyms != null && !userVocabulary.antonyms.isEmpty())}">
+                <div class="col-6" th:if="${userVocabulary.synonyms != null && !userVocabulary.synonyms.isEmpty()}">
+                    <h6 class="text-uppercase small vocab-muted fw-bold mb-2">Từ đồng nghĩa</h6>
+                    <div class="d-flex flex-wrap gap-1">
+                        <span th:each="s : ${userVocabulary.synonyms}" class="badge bg-dark border border-secondary text-light px-2 py-1" th:text="${s}">synonym</span>
+                    </div>
+                </div>
+                <div class="col-6" th:if="${userVocabulary.antonyms != null && !userVocabulary.antonyms.isEmpty()}">
+                    <h6 class="text-uppercase small vocab-muted fw-bold mb-2">Từ trái nghĩa</h6>
+                    <div class="d-flex flex-wrap gap-1">
+                        <span th:each="a : ${userVocabulary.antonyms}" class="badge bg-dark border border-secondary text-light px-2 py-1" th:text="${a}">antonym</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Explanation Button Slot -->
+            <div th:id="${'ai-explanation-' + userVocabulary.vocabularyId}" class="mb-4 text-center">
+                <button class="btn btn-sm btn-outline-light rounded-pill px-3"
+                        type="button"
+                        th:attr="hx-get=@{/vocabulary/{id}/ai-explanation(id=${userVocabulary.vocabularyId})}, hx-target=${'#ai-explanation-' + userVocabulary.vocabularyId}"
+                        hx-swap="innerHTML"
+                        hx-indicator="#review-spinner">
+                    <i class="bi bi-stars me-1 text-warning"></i> Giải thích bởi AI
+                </button>
+            </div>
+
+            <!-- Review stats -->
+            <div class="d-flex justify-content-center gap-4 mb-4 py-2 border-top border-bottom border-secondary-subtle">
+                <div class="text-center">
+                    <small class="vocab-muted d-block mb-1">Mức nhớ</small>
+                    <div class="fw-bold fs-5" th:text="${userVocabulary.masteryLevel} + '/5'">0/5</div>
+                </div>
+                <div class="text-center">
+                    <small class="vocab-muted d-block mb-1">Đã ôn</small>
+                    <div class="fw-bold fs-5" th:text="${userVocabulary.reviewCount}">0</div>
+                </div>
+                <div class="text-center">
+                    <small class="vocab-muted d-block mb-1">Kế tiếp</small>
+                    <div class="fw-bold fs-5" th:text="${userVocabulary.sm2Interval} + ' ngày'">0 ngày</div>
+                </div>
+            </div>
+
+            <!-- Quality rating buttons -->
+            <div class="review-actions mt-4">
+                <h5 class="text-center mb-3 fw-semibold text-secondary">Bạn nhớ từ này ở mức độ nào?</h5>
+                <div class="quality-buttons">
+                    <form th:each="q : ${#numbers.sequence(0, 5)}"
+                          class="quality-form"
+                          th:action="@{/vocabulary/review/{id}/submit(id=${userVocabulary.vocabularyId})}"
+                          th:method="post"
+                          th:attr="hx-post=@{/vocabulary/review/{id}/submit(id=${userVocabulary.vocabularyId})},
+                                    hx-target='#review-area',
+                                    hx-swap='innerHTML',
+                                    hx-indicator='#review-spinner'">
+                        <input type="hidden" name="quality" th:value="${q}" />
+                        <input type="hidden" name="level" th:value="${level}" th:if="${level != null}" />
+                        <button th:class="'quality-btn quality-' + ${q}" type="submit" th:text="${q}">0</button>
+                        <span class="quality-desc" th:text="${q == 0 ? 'Quên sạch' : (q == 1 ? 'Mơ hồ' : (q == 2 ? 'Lờ mờ' : (q == 3 ? 'Nhớ chậm' : (q == 4 ? 'Nhớ tốt' : 'Hoàn hảo'))))}"></span>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="htmx-indicator text-center mt-3" id="review-spinner">
+            <div class="spinner-border spinner-border-sm text-light"></div>
+        </div>
+    </article>
+
+    <div class="review-empty text-center p-5" th:if="${userVocabulary == null}">
+        <i class="bi bi-emoji-smile display-3 text-success mb-3"></i>
+        <h2 class="mt-2 h4 fw-bold">Tuyệt vời! Không còn từ nào cần ôn</h2>
+        <p class="vocab-muted mb-4">Bạn đã hoàn thành tất cả các thẻ ôn tập đến hạn.</p>
+        <a class="btn btn-primary btn-lg rounded-pill px-4" th:href="@{/vocabulary/learn}">
+            <i class="bi bi-lightning-charge-fill me-1"></i> Học từ mới
+        </a>
+    </div>
+</div>

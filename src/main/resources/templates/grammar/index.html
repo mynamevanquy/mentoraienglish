@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/main}">
+<head>
+    <title>Ngữ pháp</title>
+    <style>
+        .grammar-muted { color: var(--text-secondary); }
+        .grammar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .grammar-shell {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 360px;
+            gap: 24px;
+        }
+        .grammar-filter {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .grammar-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 16px;
+        }
+        .grammar-topic {
+            min-height: 220px;
+            display: flex;
+            flex-direction: column;
+        }
+        .grammar-topic-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .grammar-check-form textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+        #grammar-check-spinner {
+            display: none;
+            align-items: center;
+        }
+        #grammar-check-spinner.htmx-request {
+            display: flex;
+        }
+        .grammar-check-form.htmx-request button {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        @media (max-width: 992px) {
+            .grammar-header,
+            .grammar-filter { flex-direction: column; }
+            .grammar-shell { grid-template-columns: 1fr; }
+            .grammar-filter .form-select { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <header class="grammar-header">
+        <div>
+            <h1 class="h3 mb-1">Bài học ngữ pháp</h1>
+            <p class="grammar-muted mb-0">Học quy tắc, xem ví dụ và kiểm tra câu viết bằng AI.</p>
+        </div>
+        <a class="btn btn-outline-light" th:href="@{/exercises(exerciseType='FILL_BLANK')}">
+            <i class="bi bi-pencil-square"></i> Luyện bài tập
+        </a>
+    </header>
+
+    <div class="grammar-shell">
+        <section class="dash-card">
+            <form class="grammar-filter" th:action="@{/grammar}" th:method="get">
+                <div>
+                    <h2 class="h5 mb-1">Chủ điểm</h2>
+                    <p class="grammar-muted mb-0">Chọn một chủ điểm để xem quy tắc và ví dụ.</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <select class="form-select" name="level" aria-label="Lọc theo trình độ">
+                        <option value="">Tất cả trình độ</option>
+                        <option th:each="level : ${levels}"
+                                th:value="${level.name()}"
+                                th:selected="${selectedLevel == level}"
+                                th:text="${@messageHelper.level(level)}">Beginner</option>
+                    </select>
+                    <button class="btn btn-outline-light" type="submit" aria-label="Lọc">
+                        <i class="bi bi-funnel"></i>
+                    </button>
+                </div>
+            </form>
+
+            <div th:if="${topics.isEmpty()}" class="text-center py-5 grammar-muted">
+                Chưa có chủ điểm ngữ pháp phù hợp.
+            </div>
+
+            <div th:if="${!topics.isEmpty()}" class="grammar-grid">
+                <article class="dash-card grammar-topic" th:each="topic : ${topics}">
+                    <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+                        <span class="badge text-bg-info" th:text="${@messageHelper.level(topic.level())}">Level</span>
+                        <span class="grammar-muted small" th:text="${'#' + topic.orderIndex()}">#1</span>
+                    </div>
+                    <h3 class="grammar-topic-title" th:text="${topic.title()}">Present Simple</h3>
+                    <p class="grammar-muted flex-grow-1" th:text="${topic.descriptionVi()}">Mô tả ngắn</p>
+                    <a class="btn btn-sm btn-primary mt-3 align-self-start"
+                       th:href="@{/grammar/{id}(id=${topic.id()})}">
+                        Xem bài học
+                    </a>
+                </article>
+            </div>
+        </section>
+
+        <aside class="dash-card">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h2 class="h5 mb-0">Kiểm tra ngữ pháp</h2>
+                <i class="bi bi-magic grammar-muted"></i>
+            </div>
+            <form class="grammar-check-form"
+                  hx-post="/grammar/check"
+                  hx-target="#grammar-check-result"
+                  hx-swap="innerHTML"
+                  hx-indicator="#grammar-check-spinner">
+                <textarea class="form-control mb-3"
+                          name="text"
+                          maxlength="2000"
+                          required
+                          placeholder="Nhập một câu hoặc đoạn văn tiếng Anh..."></textarea>
+                <button class="btn btn-primary w-100" type="submit">
+                    <i class="bi bi-check2-circle"></i> Kiểm tra
+                </button>
+            </form>
+            <div id="grammar-check-spinner" class="htmx-indicator mt-3 grammar-muted">
+                <div class="spinner-border spinner-border-sm text-light" role="status"></div>
+                <span class="ms-2">Đang kiểm tra...</span>
+            </div>
+            <div id="grammar-check-result" class="mt-4"></div>
+        </aside>
+    </div>
+</div>
+</body>
+</html>

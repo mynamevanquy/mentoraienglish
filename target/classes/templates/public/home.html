@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MentorAI English — Nâng cấp tiếng Anh vượt trội cùng AI</title>
+    <meta name="description" content="Nền tảng học tiếng Anh thông minh ứng dụng AI: từ vựng lặp lại ngắt quãng, sửa lỗi ngữ pháp thông minh, chat bot AI tương tác thực tế." />
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    
+    <!-- Bootstrap 5.3 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    
+    <style>
+        :root {
+            --brand-primary: #6C63FF;
+            --brand-secondary: #4ECDC4;
+            --brand-gradient: linear-gradient(135deg, #6C63FF 0%, #4ECDC4 100%);
+            --surface: #07070F;
+            --surface-card: rgba(255, 255, 255, 0.03);
+            --surface-border: rgba(255, 255, 255, 0.06);
+            --text-primary: #F0F0FF;
+            --text-secondary: rgba(240, 240, 255, 0.6);
+            --radius-lg: 24px;
+            --radius-md: 14px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--surface);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4, .brand-font {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+        }
+
+        /* Ambient background glow blobs */
+        .ambient-glow {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.12;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .glow-1 {
+            width: 600px;
+            height: 600px;
+            background: var(--brand-primary);
+            top: -200px;
+            left: -200px;
+        }
+
+        .glow-2 {
+            width: 500px;
+            height: 500px;
+            background: var(--brand-secondary);
+            top: 40%;
+            right: -200px;
+        }
+
+        /* Navbar landing styling */
+        .landing-nav {
+            height: 80px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid var(--surface-border);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            background: rgba(7, 7, 15, 0.7);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 38px;
+            height: 38px;
+            background: var(--brand-gradient);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 800;
+            background: var(--brand-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-link-custom {
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link-custom:hover {
+            color: var(--text-primary);
+        }
+
+        /* Hero section */
+        .hero-section {
+            padding: 120px 0 80px;
+            position: relative;
+        }
+
+        .hero-title {
+            font-size: 56px;
+            line-height: 1.15;
+            letter-spacing: -1.5px;
+            margin-bottom: 24px;
+        }
+
+        .hero-title span {
+            background: var(--brand-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-desc {
+            font-size: 18px;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+            max-width: 580px;
+            line-height: 1.6;
+        }
+
+        .btn-premium {
+            padding: 16px 32px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 12px;
+            background: var(--brand-gradient);
+            color: #fff;
+            border: none;
+            box-shadow: 0 8px 30px rgba(108, 99, 255, 0.35);
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-premium:hover {
+            opacity: 0.95;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(108, 99, 255, 0.45);
+            color: #fff;
+        }
+
+        .btn-outline-custom {
+            padding: 16px 32px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-primary);
+            border: 1px solid var(--surface-border);
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-outline-custom:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        /* Features Cards */
+        .features-section {
+            padding: 80px 0;
+        }
+
+        .feature-card {
+            background: var(--surface-card);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-lg);
+            padding: 40px 32px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            height: 100%;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(108, 99, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .feature-icon-wrapper {
+            width: 56px;
+            height: 56px;
+            background: rgba(108, 99, 255, 0.1);
+            border: 1px solid rgba(108, 99, 255, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 24px;
+            color: var(--brand-primary);
+        }
+
+        .feature-card:nth-child(2) .feature-icon-wrapper {
+            background: rgba(78, 205, 196, 0.1);
+            border-color: rgba(78, 205, 196, 0.2);
+            color: var(--brand-secondary);
+        }
+
+        .feature-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .feature-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Call To Action */
+        .cta-section {
+            padding: 100px 0;
+        }
+
+        .cta-box {
+            background: linear-gradient(135deg, rgba(108, 99, 255, 0.1) 0%, rgba(78, 205, 196, 0.05) 100%);
+            border: 1px solid rgba(108, 99, 255, 0.15);
+            border-radius: 32px;
+            padding: 80px 48px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+        }
+
+        .cta-title {
+            font-size: 40px;
+            margin-bottom: 16px;
+        }
+
+        .cta-desc {
+            font-size: 16px;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 36px;
+        }
+
+        footer {
+            border-top: 1px solid var(--surface-border);
+            padding: 40px 0;
+            font-size: 14px;
+            color: var(--text-secondary);
+            background: rgba(10, 10, 18, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="glow-1 ambient-glow"></div>
+    <div class="glow-2 ambient-glow"></div>
+
+    <!-- Navigation Header -->
+    <nav class="landing-nav navbar-expand-lg sticky-top">
+        <div class="container d-flex align-items-center justify-content-between">
+            <a class="logo" href="/">
+                <div class="logo-icon">🎓</div>
+                <span class="logo-text">MentorAI English</span>
+            </a>
+            
+            <div class="d-flex align-items-center gap-4">
+                <a href="/pricing" class="nav-link-custom d-none d-md-block">Bảng giá</a>
+                <a href="/login" class="nav-link-custom">Đăng nhập</a>
+                <a href="/register" class="btn-premium py-2 px-3 fs-7" style="box-shadow: none;">Đăng ký miễn phí</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <h1 class="hero-title">Học tiếng Anh thông minh cùng <span>Trí Tuệ Nhân Tạo</span></h1>
+                    <p class="hero-desc">Phương pháp ghi nhớ từ vựng lặp lại ngắt quãng khoa học, bài tập sinh bởi AI cá nhân hóa và phòng luyện nói tiếng Anh tương tác thực tế 24/7.</p>
+                    <div class="d-flex flex-column flex-sm-row gap-3">
+                        <a href="/register" class="btn-premium">Bắt đầu học miễn phí <i class="bi bi-arrow-right"></i></a>
+                        <a href="/pricing" class="btn-outline-custom">Xem các gói nâng cấp <i class="bi bi-tags"></i></a>
+                    </div>
+                </div>
+                <div class="col-lg-6 mt-5 mt-lg-0 text-center">
+                    <!-- Beautiful Illustration or Glassmorphism Card Mockup -->
+                    <div style="background: linear-gradient(135deg, rgba(108, 99, 255, 0.15) 0%, rgba(78, 205, 196, 0.1) 100%); border: 1px solid rgba(255,255,255,0.08); border-radius: 32px; padding: 48px; box-shadow: 0 40px 100px rgba(0,0,0,0.5); backdrop-filter: blur(20px);">
+                        <div class="d-flex gap-3 mb-4 justify-content-start align-items-center">
+                            <span style="width: 12px; height: 12px; border-radius: 50%; background: #FF6B6B;"></span>
+                            <span style="width: 12px; height: 12px; border-radius: 50%; background: #FFD93D;"></span>
+                            <span style="width: 12px; height: 12px; border-radius: 50%; background: #4ECDC4;"></span>
+                        </div>
+                        <div style="text-align: left; font-family: 'Outfit', sans-serif;">
+                            <div class="fs-6 text-secondary mb-2">🤖 MentorAI Assistant</div>
+                            <div class="fs-3 fw-bold mb-3" style="color: #fff; letter-spacing: -0.5px;">"Your vocabulary memory is currently at 84%. Let's review 12 due cards today!"</div>
+                            <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 20px; display: flex; align-items: center; justify-content: space-between;">
+                                <div>
+                                    <div class="fs-7 text-secondary">Học từ mới hôm nay</div>
+                                    <div class="fs-5 fw-bold" style="color: var(--brand-secondary);">18 Từ vựng mới</div>
+                                </div>
+                                <div class="fs-4">🚀</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Features Section -->
+    <section class="features-section">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="fs-1" style="letter-spacing: -1px; margin-bottom: 12px;">Đột phá toàn diện các kỹ năng</h2>
+                <p class="text-secondary max-width-600 mx-auto">Sự kết hợp hoàn hảo giữa thuật toán khoa học và Trí tuệ nhân tạo (AI).</p>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon-wrapper">
+                            <i class="bi bi-lightning-charge-fill"></i>
+                        </div>
+                        <h3 class="feature-title">Spaced Repetition (SRS)</h3>
+                        <p class="feature-desc">Thuật toán lặp lại ngắt quãng tính toán chính xác thời điểm vàng bạn sắp quên từ vựng để gợi ý ôn tập, giúp nhớ lâu trọn đời.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon-wrapper">
+                            <i class="bi bi-chat-text-fill"></i>
+                        </div>
+                        <h3 class="feature-title">AI Chat Room 24/7</h3>
+                        <p class="feature-desc">Phòng nói chuyện tiếng Anh với trợ lý AI bản xứ. AI sẽ tự động phân tích và phản hồi, đồng thời sửa lỗi ngữ pháp, phát âm lập tức.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon-wrapper">
+                            <i class="bi bi-award-fill"></i>
+                        </div>
+                        <h3 class="feature-title">Bài tập sinh bởi AI</h3>
+                        <p class="feature-desc">Các bài tập đọc hiểu, ngữ pháp, trắc nghiệm được sinh tự động dựa trên chính trình độ và những chủ điểm còn yếu của bạn.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call To Action -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-box">
+                <h2 class="cta-title">Sẵn sàng nâng cấp tiếng Anh của bạn?</h2>
+                <p class="cta-desc">Tham gia cùng hàng ngàn học viên đang tiến bộ nhanh gấp 3 lần bằng phương pháp học tối ưu hóa bởi trí tuệ nhân tạo AI.</p>
+                <a href="/register" class="btn-premium px-5 py-3 fs-5">Bắt đầu học miễn phí ngay <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="text-center">
+        <div class="container">
+            <p class="mb-0">© 2026 MentorAI English. Được xây dựng tinh tế cho sự bứt phá của bạn.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5.3 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+</body>
+</html>

@@ -1,0 +1,161 @@
+<div xmlns:th="http://www.thymeleaf.org">
+    <!-- Empty Activity state -->
+    <div th:if="${#lists.isEmpty(activities)}" class="empty-activities flex-center">
+        <p class="empty-text">Chưa có hoạt động nào được ghi nhận. Bắt đầu học ngay để tích lũy XP!</p>
+    </div>
+
+    <!-- Timeline container -->
+    <div th:unless="${#lists.isEmpty(activities)}" class="timeline-container">
+        <div th:each="activity : ${activities}" class="timeline-item">
+            <!-- Left: Activity Icon Badge -->
+            <div class="timeline-badge"
+                 th:classappend="${activity.activityType.name() == 'EXERCISE' ? 'badge-exercise' :
+                                   (activity.activityType.name() == 'LESSON' ? 'badge-lesson' :
+                                    (activity.activityType.name() == 'VOCABULARY' ? 'badge-vocab' : 'badge-chat'))}">
+                 <span th:if="${activity.activityType.name() == 'LESSON'}">📖</span>
+                 <span th:if="${activity.activityType.name() == 'EXERCISE'}">📝</span>
+                 <span th:if="${activity.activityType.name() == 'VOCABULARY'}">📚</span>
+                 <span th:if="${activity.activityType.name() == 'CONVERSATION'}">💬</span>
+                 <span th:if="${activity.activityType.name() != 'LESSON' && activity.activityType.name() != 'EXERCISE' && activity.activityType.name() != 'VOCABULARY' && activity.activityType.name() != 'CONVERSATION'}">⚡</span>
+            </div>
+
+            <!-- Middle: Description & Time -->
+            <div class="timeline-content">
+                <div class="timeline-header">
+                    <span class="timeline-title"
+                          th:text="${activity.activityType.name() == 'LESSON' ? 'Đã hoàn thành bài học' :
+                                    (activity.activityType.name() == 'EXERCISE' ? 'Hoàn thành bài luyện tập' :
+                                     (activity.activityType.name() == 'VOCABULARY' ? 'Ôn tập từ vựng' :
+                                      (activity.activityType.name() == 'CONVERSATION' ? 'Trò chuyện cùng AI Tutor' : 'Hoạt động học tập')))}">
+                        Hoạt động học tập
+                    </span>
+                    <span class="timeline-time" th:text="${activity.startedAt}">12:30 24/05</span>
+                </div>
+                <div class="timeline-body">
+                    <span class="timeline-meta" th:text="${activity.durationMinutes + ' phút học tập'}">10 phút</span>
+                </div>
+            </div>
+
+            <!-- Right: XP Tag -->
+            <div class="timeline-xp">
+                <span class="xp-badge" th:text="${'+' + activity.xpEarned + ' XP'}">+10 XP</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .empty-activities {
+        padding: 40px;
+        text-align: center;
+        color: rgba(240, 240, 255, 0.45);
+        font-size: 14px;
+    }
+
+    .timeline-container {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        position: relative;
+        padding-left: 8px;
+    }
+
+    .timeline-container::before {
+        content: '';
+        position: absolute;
+        top: 8px;
+        bottom: 8px;
+        left: 27px;
+        width: 2px;
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .timeline-item {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        position: relative;
+    }
+
+    .timeline-badge {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        z-index: 1;
+        background: rgba(255, 255, 255, 0.05);
+        border: 2px solid var(--surface);
+    }
+
+    /* Badges styles */
+    .badge-lesson {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10B981;
+    }
+
+    .badge-exercise {
+        background: rgba(59, 130, 246, 0.1);
+        color: #3B82F6;
+    }
+
+    .badge-vocab {
+        background: rgba(245, 158, 11, 0.1);
+        color: #F59E0B;
+    }
+
+    .badge-chat {
+        background: rgba(167, 139, 250, 0.1);
+        color: #A78BFA;
+    }
+
+    .timeline-content {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        border-radius: 12px;
+        padding: 12px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .timeline-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .timeline-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #F0F0FF;
+    }
+
+    .timeline-time {
+        font-size: 11px;
+        color: rgba(240, 240, 255, 0.35);
+    }
+
+    .timeline-meta {
+        font-size: 12px;
+        color: rgba(240, 240, 255, 0.45);
+    }
+
+    .timeline-xp {
+        flex-shrink: 0;
+    }
+
+    .xp-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 20px;
+        background: rgba(16, 185, 129, 0.12);
+        border: 1px solid rgba(16, 185, 129, 0.25);
+        color: #10B981;
+        font-size: 12px;
+        font-weight: 700;
+    }
+</style>

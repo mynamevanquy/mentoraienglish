@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/main}">
+<head>
+    <title th:text="${topic.title()}">Ngữ pháp</title>
+    <style>
+        .grammar-muted { color: var(--text-secondary); }
+        .grammar-detail {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 340px;
+            gap: 24px;
+        }
+        .grammar-list {
+            display: grid;
+            gap: 12px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+        .grammar-list li {
+            padding: 14px 16px;
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-md);
+            background: rgba(255,255,255,0.03);
+        }
+        #ai-explanation-spinner {
+            display: none;
+            align-items: center;
+        }
+        #ai-explanation-spinner.htmx-request {
+            display: flex;
+        }
+        .ai-explain-button.htmx-request {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        @media (max-width: 992px) {
+            .grammar-detail { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
+        <div>
+            <a class="grammar-muted text-decoration-none small" th:href="@{/grammar}">
+                <i class="bi bi-arrow-left"></i> Quay lại danh sách
+            </a>
+            <h1 class="h3 mt-2 mb-2" th:text="${topic.title()}">Grammar topic</h1>
+            <div class="d-flex gap-2 align-items-center">
+                <span class="badge text-bg-info" th:text="${@messageHelper.level(topic.level())}">Level</span>
+                <span class="grammar-muted small" th:text="${topic.descriptionEn()}">Short English description</span>
+            </div>
+        </div>
+        <a class="btn btn-outline-light" th:href="@{/exercises/generate(topic=${topic.title()}, difficulty=${topic.level()})}">
+            <i class="bi bi-stars"></i> Tạo bài tập
+        </a>
+    </div>
+
+    <div class="grammar-detail">
+        <main class="d-grid gap-4">
+            <section class="dash-card">
+                <h2 class="h5 mb-3">Tổng quan</h2>
+                <p class="grammar-muted mb-0" th:text="${topic.descriptionVi()}">Mô tả</p>
+            </section>
+
+            <section class="dash-card">
+                <h2 class="h5 mb-3">Quy tắc chính</h2>
+                <ul class="grammar-list">
+                    <li th:each="rule : ${topic.rules()}" th:text="${rule}">Rule</li>
+                </ul>
+            </section>
+
+            <section class="dash-card">
+                <h2 class="h5 mb-3">Ví dụ</h2>
+                <ul class="grammar-list">
+                    <li th:each="example : ${topic.examples()}" th:text="${example}">Example</li>
+                </ul>
+            </section>
+        </main>
+
+        <aside class="dash-card">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h2 class="h5 mb-0">Giải thích bằng AI</h2>
+                <i class="bi bi-stars grammar-muted"></i>
+            </div>
+            <p class="grammar-muted">Tạo thêm quy tắc, lỗi thường gặp và ví dụ phù hợp với trình độ hiện tại.</p>
+            <button class="btn btn-primary w-100 ai-explain-button"
+                    type="button"
+                    th:attr="hx-get=@{/grammar/{id}/ai-explanation(id=${topic.id()})}"
+                    hx-target="#ai-explanation"
+                    hx-swap="innerHTML"
+                    hx-indicator="#ai-explanation-spinner">
+                <i class="bi bi-lightbulb"></i> Giải thích thêm
+            </button>
+            <div id="ai-explanation-spinner" class="htmx-indicator mt-3 grammar-muted">
+                <div class="spinner-border spinner-border-sm text-light" role="status"></div>
+                <span class="ms-2">AI đang giải thích...</span>
+            </div>
+            <div id="ai-explanation" class="mt-4"></div>
+        </aside>
+    </div>
+</div>
+</body>
+</html>
