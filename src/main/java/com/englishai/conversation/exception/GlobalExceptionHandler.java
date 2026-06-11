@@ -1,7 +1,8 @@
 package com.englishai.conversation.exception;
 
 import com.englishai.ai.exception.AiRateLimitExceededException;
-import com.englishai.ai.exception.OpenAiException;
+import com.englishai.ai.exception.GroqAiException;
+import com.englishai.ai.exception.GroqAiRateLimitException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -56,9 +57,22 @@ public class GlobalExceptionHandler {
         return FULL_ERROR_PAGE;
     }
 
-    @ExceptionHandler(OpenAiException.class)
-    public String handleOpenAi(OpenAiException ex, Model model, HttpServletRequest request) {
-        log.error("OpenAI error: {}", ex.getMessage(), ex);
+    @ExceptionHandler(GroqAiRateLimitException.class)
+    public String handleProviderRateLimit(GroqAiRateLimitException ex, Model model, HttpServletRequest request) {
+        String message = buildGroqRateLimitMessage(ex);
+        log.warn("Groq AI rate limit exceeded: {}", ex.getMessage());
+        if (isHtmxRequest(request)) {
+            model.addAttribute("message", message);
+            return HTMX_ERROR_FRAGMENT;
+        }
+        model.addAttribute("status", HttpStatus.TOO_MANY_REQUESTS.value());
+        model.addAttribute("error", message);
+        return FULL_ERROR_PAGE;
+    }
+
+    @ExceptionHandler(GroqAiException.class)
+    public String handleGroqAi(GroqAiException ex, Model model, HttpServletRequest request) {
+        log.error("Groq AI error: {}", ex.getMessage(), ex);
         if (isHtmxRequest(request)) {
             model.addAttribute("message", "Dịch vụ AI tạm thời không khả dụng. Vui lòng thử lại sau.");
             return HTMX_ERROR_FRAGMENT;
@@ -92,7 +106,17 @@ public class GlobalExceptionHandler {
         return FULL_ERROR_PAGE;
     }
 
+    private String buildGroqRateLimitMessage(GroqAiRateLimitException ex) {
+        if (org.springframework.util.StringUtils.hasText(ex.getUserMessage())) {
+            return ex.getUserMessage();
+        }
+        return "Groq AI dang gioi han quota hoac toc do goi API cua key hien tai. "
+                + "Vui long cho quota reset, giam tan suat gui, hoac dung API key/project co quota cao hon.";
+    }
+
     private boolean isHtmxRequest(HttpServletRequest request) {
         return "true".equals(request.getHeader("HX-Request"));
     }
 }
+
+

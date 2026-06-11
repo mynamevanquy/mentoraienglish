@@ -197,6 +197,14 @@
                     </div>
                 </div>
             </div>
+            <div th:if="${chatError != null}" class="d-flex justify-content-start">
+                <div class="rounded-4 p-3 bubble-error" style="max-width: min(760px, 86%); width: fit-content; overflow-wrap: break-word;">
+                    <div class="small fw-semibold mb-2" style="color: #ff6b6b;">
+                        <i class="bi bi-exclamation-triangle me-1"></i> Loi AI
+                    </div>
+                    <div th:text="${chatError}">AI service is unavailable.</div>
+                </div>
+            </div>
         </div>
 
         <!-- Typing indicator + Input form -->

@@ -1,7 +1,9 @@
 package com.englishai.conversation.service;
 
-import com.englishai.ai.client.OpenAiRequest;
+import com.englishai.ai.client.GroqAiRequest;
+import com.englishai.ai.config.GroqAiProperties;
 import com.englishai.ai.dto.CompletionResult;
+import com.englishai.ai.exception.GroqAiException;
 import com.englishai.ai.service.AiService;
 import com.englishai.common.enums.ConversationStatus;
 import com.englishai.common.enums.MessageRole;
@@ -36,7 +38,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ConversationService {
 
-    private static final String MODEL = "mimo-v2.5-pro";
     private static final int MAX_CONTEXT_MESSAGES = 20;
     private static final int MAX_MONTHLY_TOKENS = 100_000;
 
@@ -44,6 +45,7 @@ public class ConversationService {
     private final ConversationMessageRepository conversationMessageRepository;
     private final UserRepository userRepository;
     private final AiService aiService;
+    private final GroqAiProperties groqAiProperties;
 
     @Transactional
     public ConversationDto createConversation(UUID userId, String title) {
@@ -55,7 +57,7 @@ public class ConversationService {
                 .user(user)
                 .title(safeTitle)
                 .systemPrompt(buildTutorSystemPrompt("INTERMEDIATE"))
-                .modelUsed(MODEL)
+                .modelUsed(groqAiProperties.getChatModel())
                 .status(ConversationStatus.ACTIVE)
                 .build();
 
@@ -87,7 +89,7 @@ public class ConversationService {
                 .build();
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = GroqAiException.class)
     public MessageResponseDto sendMessage(UUID userId, UUID conversationId, String userMessage) {
         if (!StringUtils.hasText(userMessage)) {
             throw new IllegalArgumentException("Message must not be empty.");
@@ -104,15 +106,15 @@ public class ConversationService {
             conversation.setTitle(newTitle);
         }
 
+        List<GroqAiRequest.Message> aiMessages = buildAiMessages(conversation, cleanUserMessage);
+        CompletionResult completion = aiService.completeChat(userId, aiMessages, 700);
+
         ConversationMessage userMessageEntity = ConversationMessage.builder()
                 .conversation(conversation)
                 .role(MessageRole.USER)
                 .content(cleanUserMessage)
                 .build();
         conversationMessageRepository.save(userMessageEntity);
-
-        List<OpenAiRequest.Message> aiMessages = buildAiMessages(conversation, cleanUserMessage);
-        CompletionResult completion = aiService.completeChat(userId, aiMessages, 1000);
 
         ParsedAssistantResponse parsed = parseAssistantResponse(completion.content());
         ConversationMessage assistantMessage = ConversationMessage.builder()
@@ -165,9 +167,9 @@ public class ConversationService {
         return conversation;
     }
 
-    private List<OpenAiRequest.Message> buildAiMessages(Conversation conversation, String userMessage) {
-        List<OpenAiRequest.Message> messages = new ArrayList<>();
-        messages.add(new OpenAiRequest.Message("system", conversation.getSystemPrompt()));
+    private List<GroqAiRequest.Message> buildAiMessages(Conversation conversation, String userMessage) {
+        List<GroqAiRequest.Message> messages = new ArrayList<>();
+        messages.add(new GroqAiRequest.Message("system", conversation.getSystemPrompt()));
 
         List<ConversationMessage> context = new ArrayList<>(
                 conversationMessageRepository.findTop20ByConversationIdOrderByCreatedAtDesc(conversation.getId()));
@@ -177,11 +179,11 @@ public class ConversationService {
         for (int i = 0; i < contextSize; i++) {
             ConversationMessage message = context.get(i);
             String role = message.getRole() == MessageRole.ASSISTANT ? "assistant" : "user";
-            messages.add(new OpenAiRequest.Message(role, message.getContent()));
+            messages.add(new GroqAiRequest.Message(role, message.getContent()));
         }
 
         if (context.isEmpty() || !context.getLast().getContent().equals(userMessage)) {
-            messages.add(new OpenAiRequest.Message("user", userMessage));
+            messages.add(new GroqAiRequest.Message("user", userMessage));
         }
 
         return messages;

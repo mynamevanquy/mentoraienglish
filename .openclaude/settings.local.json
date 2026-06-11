@@ -3,7 +3,9 @@
     "allow": [
       "Bash(./mvnw compile:*)",
       "Bash(where mvn:*)",
-      "Bash(mvn compile:*)"
+      "Bash(mvn compile:*)",
+      "Bash(./mvnw test:*)",
+      "Bash(mvn test:*)"
     ]
   }
 }

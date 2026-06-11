@@ -1,7 +1,8 @@
 package com.englishai.conversation.controller;
 
 import com.englishai.ai.exception.AiRateLimitExceededException;
-import com.englishai.ai.exception.OpenAiException;
+import com.englishai.ai.exception.GroqAiException;
+import com.englishai.ai.exception.GroqAiRateLimitException;
 import com.englishai.conversation.dto.ConversationDetailDto;
 import com.englishai.conversation.dto.ConversationDto;
 import com.englishai.conversation.dto.MessageResponseDto;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.security.Principal;
 import java.util.List;
@@ -63,11 +65,23 @@ public class ConversationController {
     @PostMapping("/start")
     public String start(
             Principal principal,
-            @RequestParam("message") String message) {
+            @RequestParam("message") String message,
+            RedirectAttributes redirectAttributes) {
         User user = getAuthenticatedUser(principal);
         String title = buildTitleFromMessage(message);
         ConversationDto conversation = conversationService.createConversation(user.getId(), title);
-        conversationService.sendMessage(user.getId(), conversation.getId(), message);
+        try {
+            conversationService.sendMessage(user.getId(), conversation.getId(), message);
+        } catch (AiRateLimitExceededException ex) {
+            log.warn("Rate limit exceeded while starting conversation {}: {}", conversation.getId(), ex.getMessage());
+            redirectAttributes.addFlashAttribute("chatError", ex.getMessage());
+        } catch (GroqAiRateLimitException ex) {
+            log.warn("Groq AI rate limit while starting conversation {}: {}", conversation.getId(), ex.getMessage());
+            redirectAttributes.addFlashAttribute("chatError", buildGroqRateLimitMessage(ex));
+        } catch (GroqAiException ex) {
+            log.error("Groq AI error while starting conversation {}", conversation.getId(), ex);
+            redirectAttributes.addFlashAttribute("chatError", "Dịch vụ AI tạm thời không khả dụng. Vui lòng thử lại sau.");
+        }
         return "redirect:/conversation/" + conversation.getId();
     }
 
@@ -126,8 +140,12 @@ public class ConversationController {
             log.warn("Rate limit exceeded in sendMessage: {}", ex.getMessage());
             model.addAttribute("message", ex.getMessage());
             return "conversation/fragments/error-bubble :: error";
-        } catch (OpenAiException ex) {
-            log.error("OpenAI error in sendMessage for conversation {}", id, ex);
+        } catch (GroqAiRateLimitException ex) {
+            log.warn("Groq AI rate limit in sendMessage for conversation {}: {}", id, ex.getMessage());
+            model.addAttribute("message", buildGroqRateLimitMessage(ex));
+            return "conversation/fragments/error-bubble :: error";
+        } catch (GroqAiException ex) {
+            log.error("Groq AI error in sendMessage for conversation {}", id, ex);
             model.addAttribute("message", "Dịch vụ AI tạm thời không khả dụng. Vui lòng thử lại sau.");
             return "conversation/fragments/error-bubble :: error";
         } catch (Exception ex) {
@@ -164,6 +182,13 @@ public class ConversationController {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + principal.getName()));
     }
 
+    private String buildGroqRateLimitMessage(GroqAiRateLimitException ex) {
+        if (org.springframework.util.StringUtils.hasText(ex.getUserMessage())) {
+            return ex.getUserMessage();
+        }
+        return "Groq AI dang gioi han quota hoac toc do goi API cua key hien tai. "
+                + "Vui long cho quota reset, giam tan suat gui, hoac dung API key/project co quota cao hon.";
+    }
     private String buildTitleFromMessage(String message) {
         if (message == null || message.isBlank()) {
             return "New English chat";
@@ -172,3 +197,5 @@ public class ConversationController {
         return compactMessage.length() > 64 ? compactMessage.substring(0, 61) + "..." : compactMessage;
     }
 }
+
+

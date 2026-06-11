@@ -1,11 +1,12 @@
 package com.englishai.ai.service;
 
-import com.englishai.ai.client.OpenAiClient;
-import com.englishai.ai.client.OpenAiRequest;
-import com.englishai.ai.client.OpenAiResponse;
+import com.englishai.ai.config.GroqAiProperties;
+import com.englishai.ai.client.GroqAiClient;
+import com.englishai.ai.client.GroqAiRequest;
+import com.englishai.ai.client.GroqAiResponse;
 import com.englishai.ai.dto.*;
 import com.englishai.ai.exception.AiRateLimitExceededException;
-import com.englishai.ai.exception.OpenAiException;
+import com.englishai.ai.exception.GroqAiException;
 import com.englishai.common.enums.MessageRole;
 import com.englishai.conversation.entity.Conversation;
 import com.englishai.conversation.entity.ConversationMessage;
@@ -28,14 +29,13 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class AiService {
 
-    private final OpenAiClient openAiClient;
+    private final GroqAiClient groqAiClient;
     private final PromptBuilder promptBuilder;
     private final AiResponseParser aiResponseParser;
     private final TokenUsageTracker tokenUsageTracker;
     private final ConversationRepository conversationRepository;
     private final ConversationMessageRepository conversationMessageRepository;
-
-    private static final String DEFAULT_MODEL = "mimo-v2.5-pro";
+    private final GroqAiProperties groqAiProperties;
 
     private void checkRateLimit(UUID userId) {
         if (!tokenUsageTracker.canMakeRequest(userId)) {
@@ -44,20 +44,19 @@ public class AiService {
         }
     }
 
-    public CompletionResult completeChat(UUID userId, List<OpenAiRequest.Message> messages, int maxTokens) {
+    public CompletionResult completeChat(UUID userId, List<GroqAiRequest.Message> messages, int maxTokens) {
         checkRateLimit(userId);
 
-        OpenAiRequest request = new OpenAiRequest(
-                DEFAULT_MODEL,
+        GroqAiRequest request = new GroqAiRequest(
+                groqAiProperties.getChatModel(),
                 messages,
                 0.7,
-                maxTokens,
-                new OpenAiRequest.ResponseFormat("text")
+                maxTokens
         );
 
-        OpenAiResponse response = openAiClient.postChatCompletion(userId, request);
+        GroqAiResponse response = groqAiClient.generateContent(userId, request);
         if (response == null || response.choices().isEmpty()) {
-            throw new OpenAiException("Empty response from OpenAI");
+            throw new GroqAiException("Empty response from Groq AI");
         }
 
         String reply = response.choices().getFirst().message().content();
@@ -95,21 +94,20 @@ public class AiService {
             // Construct prompt
             String systemPrompt = promptBuilder.buildTutorPrompt(historyStr.toString(), userMessage, "INTERMEDIATE");
 
-            List<OpenAiRequest.Message> messages = new ArrayList<>();
-            messages.add(new OpenAiRequest.Message("system", systemPrompt));
-            messages.add(new OpenAiRequest.Message("user", userMessage));
+            List<GroqAiRequest.Message> messages = new ArrayList<>();
+            messages.add(new GroqAiRequest.Message("system", systemPrompt));
+            messages.add(new GroqAiRequest.Message("user", userMessage));
 
-            OpenAiRequest request = new OpenAiRequest(
-                    DEFAULT_MODEL,
+            GroqAiRequest request = new GroqAiRequest(
+                    groqAiProperties.getChatModel(),
                     messages,
                     0.7,
-                    1000,
-                    new OpenAiRequest.ResponseFormat("text")
+                    1000
             );
 
-            OpenAiResponse response = openAiClient.postChatCompletion(userId, request);
+            GroqAiResponse response = groqAiClient.generateContent(userId, request);
             if (response == null || response.choices().isEmpty()) {
-                throw new OpenAiException("Empty response from OpenAI");
+                throw new GroqAiException("Empty response from Groq AI");
             }
 
             String reply = response.choices().getFirst().message().content();
@@ -152,15 +150,14 @@ public class AiService {
                     request.count()
             );
 
-            OpenAiRequest apiRequest = new OpenAiRequest(
-                    DEFAULT_MODEL,
-                    List.of(new OpenAiRequest.Message("user", prompt)),
+            GroqAiRequest apiRequest = new GroqAiRequest(
+                    groqAiProperties.getExerciseModel(),
+                    List.of(new GroqAiRequest.Message("user", prompt)),
                     0.5,
-                    2000,
-                    null
+                    2000
             );
 
-            OpenAiResponse response = openAiClient.postChatCompletion(userId, apiRequest);
+            GroqAiResponse response = groqAiClient.generateContent(userId, apiRequest);
             if (response == null || response.choices().isEmpty()) {
                 return CompletableFuture.completedFuture(Collections.emptyList());
             }
@@ -182,15 +179,14 @@ public class AiService {
 
             String prompt = promptBuilder.buildGrammarExplanationPrompt(grammarTopic, userLevel);
 
-            OpenAiRequest apiRequest = new OpenAiRequest(
-                    DEFAULT_MODEL,
-                    List.of(new OpenAiRequest.Message("user", prompt)),
+            GroqAiRequest apiRequest = new GroqAiRequest(
+                    groqAiProperties.getModel(),
+                    List.of(new GroqAiRequest.Message("user", prompt)),
                     0.3,
-                    1500,
-                    null
+                    4000
             );
 
-            OpenAiResponse response = openAiClient.postChatCompletion(userId, apiRequest);
+            GroqAiResponse response = groqAiClient.generateContent(userId, apiRequest);
             if (response == null || response.choices().isEmpty()) {
                 return CompletableFuture.completedFuture(
                         new GrammarExplanationDto(grammarTopic, "Không nhận được phản hồi từ AI.", Collections.emptyList(), Collections.emptyList(), Collections.emptyList())
@@ -216,15 +212,14 @@ public class AiService {
 
             String prompt = promptBuilder.buildVocabularyExplanationPrompt(word);
 
-            OpenAiRequest apiRequest = new OpenAiRequest(
-                    DEFAULT_MODEL,
-                    List.of(new OpenAiRequest.Message("user", prompt)),
+            GroqAiRequest apiRequest = new GroqAiRequest(
+                    groqAiProperties.getModel(),
+                    List.of(new GroqAiRequest.Message("user", prompt)),
                     0.3,
-                    1200,
-                    null
+                    1200
             );
 
-            OpenAiResponse response = openAiClient.postChatCompletion(userId, apiRequest);
+            GroqAiResponse response = groqAiClient.generateContent(userId, apiRequest);
             if (response == null || response.choices().isEmpty()) {
                 return CompletableFuture.completedFuture(
                         new VocabularyInfoDto(word, "", "", "", "Không nhận được phản hồi từ AI.", Collections.emptyList(), Collections.emptyList(), Collections.emptyList())
@@ -250,15 +245,14 @@ public class AiService {
 
             String prompt = promptBuilder.buildGrammarCorrectionPrompt(text);
 
-            OpenAiRequest apiRequest = new OpenAiRequest(
-                    DEFAULT_MODEL,
-                    List.of(new OpenAiRequest.Message("user", prompt)),
+            GroqAiRequest apiRequest = new GroqAiRequest(
+                    groqAiProperties.getModel(),
+                    List.of(new GroqAiRequest.Message("user", prompt)),
                     0.2,
-                    1500,
-                    null
+                    1500
             );
 
-            OpenAiResponse response = openAiClient.postChatCompletion(userId, apiRequest);
+            GroqAiResponse response = groqAiClient.generateContent(userId, apiRequest);
             if (response == null || response.choices().isEmpty()) {
                 return CompletableFuture.completedFuture(
                         new GrammarCorrectionResult(text, text, Collections.emptyList(), false)

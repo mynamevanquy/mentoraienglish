@@ -57,12 +57,12 @@ EnglishAiApplicationTests.java:
 Sections:
 - Project overview (what it is, main features)
 - Tech stack table
-- Prerequisites (Java 21, Docker, PostgreSQL, OpenAI API key)
+- Prerequisites (Java 21, Docker, PostgreSQL, Groq AI API key)
 - Quick start with Docker Compose
 - Quick start without Docker (manual setup steps)
 - Environment variables table (name, description, required, default)
 - Project structure explanation
-- API key setup (OpenAI)
+- API key setup (Groq AI)
 - Flyway migration notes
 - Known limitations / TODO list
 - License

@@ -1,9 +1,9 @@
-You are a senior Java engineer specializing in OpenAI API integration.
+You are a senior Java engineer specializing in Groq AI API integration.
 
 Context:
 - Spring Boot 3.2, Java 21
 - Use Spring's RestClient (NOT WebClient, NOT deprecated RestTemplate)
-- OpenAI model: gpt-4o
+- Groq model: llama-3.3-70b-versatile
 - Streaming: NOT required in this phase (standard request/response)
 - Token tracking: log every API call to ai_logs table
 - Prompt injection protection: sanitize user input before including in prompts
@@ -12,16 +12,16 @@ Context:
 ## Task
 Generate the complete ai/ module.
 
-## 1. OpenAiClient.java
+## 1. GroqAiClient.java
 Low-level HTTP client:
-- POST to https://api.openai.com/v1/chat/completions
+- POST to https://api.groq.com/openai/v1/chat/completions
 - Build request: model, messages[], temperature, max_tokens
 - Parse response: extract content, usage (prompt_tokens, completion_tokens)
 - Handle errors: 429 rate limit, 500 server error → throw typed exceptions
 - Measure latency, log to AiLogService
 
-## 2. OpenAiRequest.java / OpenAiResponse.java (records)
-Map exactly to OpenAI API JSON structure.
+## 2. GroqAiRequest.java / GroqAiResponse.java (records)
+Map exactly to Groq AI request/response structure.
 Use Jackson for serialization.
 
 ## 3. PromptBuilder.java
@@ -36,7 +36,7 @@ Use Jackson for serialization.
   * buildGrammarCorrectionPrompt(userText)
 
 ## 4. AiResponseParser.java
-Parse OpenAI response content for structured outputs:
+Parse Groq AI response content for structured outputs:
 - parseExerciseList(content) → List<ExerciseQuestionDto>
   (AI returns JSON array, parse with ObjectMapper, handle malformed JSON gracefully)
 - parseGrammarCorrections(content) → List<GrammarCorrectionDto>
@@ -65,8 +65,8 @@ List of patterns to detect and reject/strip:
 Log detection to audit_logs.
 
 ## Constraints
-- API key loaded from environment variable OPENAI_API_KEY, never hardcoded
+- API key loaded from environment variable GROQ_AI_API_KEY, never hardcoded
 - All AI calls must be @Async to not block request thread
 - AiService methods return CompletableFuture<T>
 - Caller handles timeout (30 seconds max)
-- If AI call fails, return graceful fallback, do NOT propagate raw OpenAI error to user
+- If AI call fails, return graceful fallback, do NOT propagate raw Groq AI error to user

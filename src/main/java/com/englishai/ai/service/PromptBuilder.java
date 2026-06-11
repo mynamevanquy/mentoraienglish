@@ -64,7 +64,9 @@ public class PromptBuilder {
 
         return template
                 .replace("{topic}", sanitizedTopic)
-                .replace("{level}", userLevel != null ? userLevel : "BEGINNER");
+                .replace("{level}", userLevel != null ? userLevel : "BEGINNER")
+                + "\nReturn a single valid JSON object only. Do not use Markdown, bullet points, code fences, or text outside JSON. "
+                + "All string values must be valid JSON strings with escaped quotes/newlines when needed.";
     }
 
     public String buildVocabularyExplanationPrompt(String word) {

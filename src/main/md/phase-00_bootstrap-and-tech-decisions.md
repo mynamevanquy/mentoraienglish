@@ -13,7 +13,7 @@ Initialize a production-ready Spring Boot project with the following exact speci
 - Spring Security 6
 - Spring Data JPA + Hibernate 6
 - Flyway 9
-- OpenAI Java SDK (com.theokanning.openai-gpt3-java) OR direct RestClient call to api.openai.com
+- Groq AI / Groq REST API via Spring RestClient
 - Maven (NOT Gradle)
 - Lombok
 - MapStruct
@@ -34,7 +34,7 @@ com.englishai
 com.englishai
 ├── auth/         (controller, service, dto, entity, repository)
 ├── user/
-├── ai/           (openai client, prompt builder, response parser, token tracker)
+├── ai/           (google ai client, prompt builder, response parser, token tracker)
 ├── course/
 ├── lesson/
 ├── vocabulary/
@@ -44,13 +44,13 @@ com.englishai
 ├── dashboard/
 ├── progress/
 ├── common/       (base entity, audit, pagination, exception, response wrapper)
-└── config/       (security, flyway, openai, bucket4j, async, thymeleaf)
+└── config/       (security, flyway, google ai, bucket4j, async, thymeleaf)
 
 ## Constraints
 - Use UUID (not Long) for all primary keys
 - All entities extend BaseEntity (id, createdAt, updatedAt, deletedAt for soft delete)
 - No business logic in controllers
-- No direct OpenAI call outside ai/ module
+- No direct Groq AI call outside ai/ module
 
 ## Output format
 - Show pom.xml in full

@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: optional:file:.env[.properties]
   jackson:
     time-zone: Asia/Ho_Chi_Minh
   cache:
@@ -7,8 +9,6 @@ spring:
       spec: maximumSize=1000,expireAfterWrite=10m
   main:
     allow-bean-definition-overriding: true
-  profiles:
-    active: dev
   threads:
     virtual:
       enabled: true
@@ -19,39 +19,47 @@ spring:
     password: ${DB_PASSWORD:12345}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 10
-      minimum-idle: 5
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
+      minimum-idle: ${DB_POOL_MIN_IDLE:5}
       idle-timeout: 300000
       connection-timeout: 20000
+      max-lifetime: 1800000
 
   jpa:
     open-in-view: false
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    show-sql: ${JPA_SHOW_SQL:true}
     properties:
       hibernate:
-        format_sql: true
+        format_sql: ${JPA_FORMAT_SQL:true}
         jdbc:
           batch_size: 25
           time_zone: Asia/Ho_Chi_Minh
+        order_inserts: true
+        order_updates: true
 
   flyway:
     enabled: true
-    clean-disabled: false
+    clean-disabled: ${FLYWAY_CLEAN_DISABLED:false}
+    clean-on-validation-error: false
     locations: classpath:db/migration
     repair-on-migrate: true
     validate-on-migrate: false
 
   session:
-    store-type: none # Use standard in-memory servlet container session for local dev
+    store-type: ${SESSION_STORE_TYPE:none}
+    redis:
+      namespace: mentor-ai-english:session
 
   data:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:false}
 
 server:
   port: ${SERVER_PORT:8081}
@@ -61,28 +69,31 @@ server:
   servlet:
     session:
       timeout: ${SESSION_TIMEOUT:30m}
+      cookie:
+        http-only: true
+        secure: ${SESSION_COOKIE_SECURE:false}
+        same-site: lax
 
-# Gitlawb Opengateway configuration
-openai:
-  api:
-    key: ${OPENGATEWAY_API_KEY:ogw_live_f17bac25931451bf590dd1a52700c239}
-    url: https://opengateway.gitlawb.com/v1
+groq:
+  ai:
+    key: ${GROQ_API_KEY:${GROQ_AI_API_KEY:}}
+    url: ${GROQ_AI_URL:https://api.groq.com/openai/v1}
+    model: ${GROQ_AI_MODEL:llama-3.3-70b-versatile}
+    chat-model: ${GROQ_AI_CHAT_MODEL:${groq.ai.model}}
+    exercise-model: ${GROQ_AI_EXERCISE_MODEL:${groq.ai.model}}
 
-# Logging configuration
 logging:
   level:
     root: INFO
     com.englishai: INFO
     org.hibernate.SQL: WARN
     org.hibernate.orm.results: WARN
+    org.springframework.web: WARN
 
-# Application-level security properties
 app:
   security:
-    # Remember-me signing key; override via APP_SECURITY_REMEMBER_ME_KEY in production
     remember-me-key: ${APP_SECURITY_REMEMBER_ME_KEY:mentorAIDefaultKey-changeMeInProd}
 
-# Rate limiting using Bucket4j starter
 bucket4j:
   enabled: true
   filters:
@@ -91,7 +102,7 @@ bucket4j:
       url: /api/.*
       rate-limits:
         - bandwidths:
-            - capacity: 60
+            - capacity: ${RATE_LIMIT_CAPACITY:60}
               time: 1
               unit: minutes
               refill-speed: greedy

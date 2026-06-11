@@ -3,7 +3,7 @@ package com.englishai.ai.exception;
 /**
  * Custom runtime exception representing that the user has exceeded their hourly/daily AI request limit.
  */
-public class AiRateLimitExceededException extends OpenAiException {
+public class AiRateLimitExceededException extends GroqAiException {
 
     public AiRateLimitExceededException(String message) {
         super(message);
