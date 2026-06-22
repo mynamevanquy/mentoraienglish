@@ -60,3 +60,18 @@ $env:PASSWORD_RESET_TOKEN_VALIDITY="30m"
 
 For authenticated SMTP, also set `MAIL_USERNAME`, `MAIL_PASSWORD`,
 `MAIL_SMTP_AUTH=true`, and `MAIL_SMTP_STARTTLS=true`.
+
+## Render database pool
+
+The default HikariCP settings are tuned for managed PostgreSQL connections.
+They can be overridden on Render when necessary:
+
+```properties
+DB_POOL_MAX_SIZE=10
+DB_POOL_MIN_IDLE=2
+DB_POOL_IDLE_TIMEOUT=120000
+DB_POOL_CONNECTION_TIMEOUT=20000
+DB_POOL_VALIDATION_TIMEOUT=5000
+DB_POOL_KEEPALIVE_TIME=120000
+DB_POOL_MAX_LIFETIME=600000
+```

@@ -12,7 +12,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.autoconfigure.mail.MailProperties;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mail.MailSendException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.core.session.SessionRegistry;
@@ -45,6 +47,7 @@ class PasswordResetServiceTest {
 
     private PasswordResetService service;
     private PasswordResetProperties properties;
+    private MailProperties mailProperties;
 
     @BeforeEach
     void setUp() {
@@ -53,11 +56,17 @@ class PasswordResetServiceTest {
         properties.setTokenValidity(Duration.ofMinutes(30));
         properties.setFromEmail("no-reply@mentor.example");
         properties.setMailEnabled(true);
+        mailProperties = new MailProperties();
+        mailProperties.setHost("smtp.example.com");
+        mailProperties.setPort(587);
+        mailProperties.getProperties().put("mail.smtp.auth", "true");
+        mailProperties.getProperties().put("mail.smtp.starttls.enable", "true");
         service = new PasswordResetService(
                 userRepository,
                 tokenRepository,
                 passwordEncoder,
                 mailSender,
+                mailProperties,
                 properties,
                 jdbcTemplate,
                 sessionRegistry);
@@ -105,6 +114,21 @@ class PasswordResetServiceTest {
 
         verify(tokenRepository).saveAndFlush(any(PasswordResetToken.class));
         verify(mailSender, never()).send(any(SimpleMailMessage.class));
+    }
+
+    @Test
+    void propagatesSmtpFailureAfterLoggingDeliveryContext() {
+        User user = enabledUser();
+        when(userRepository.findByEmail("learner@example.com")).thenReturn(Optional.of(user));
+        MailSendException failure = new MailSendException(
+                "SMTP delivery failed",
+                new IllegalStateException("Connection refused"));
+        org.mockito.Mockito.doThrow(failure)
+                .when(mailSender)
+                .send(any(SimpleMailMessage.class));
+
+        assertThatThrownBy(() -> service.requestReset("learner@example.com"))
+                .isSameAs(failure);
     }
 
     @Test

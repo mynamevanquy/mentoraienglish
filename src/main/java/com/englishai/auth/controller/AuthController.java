@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.mail.MailException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -84,8 +85,15 @@ public class AuthController {
             redirectAttributes.addFlashAttribute(
                     "successMessage",
                     "Nếu email tồn tại trong hệ thống, chúng tôi đã gửi liên kết đặt lại mật khẩu.");
+        } catch (MailException e) {
+            log.warn("password_reset_request_failed reason=MAIL_DELIVERY_ERROR exception={} message={}",
+                    e.getClass().getSimpleName(),
+                    e.getMessage());
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    "Chưa thể gửi email lúc này. Vui lòng thử lại sau.");
         } catch (Exception e) {
-            log.error("Unable to send password reset email", e);
+            log.error("password_reset_request_failed reason=UNEXPECTED_ERROR", e);
             redirectAttributes.addFlashAttribute(
                     "errorMessage",
                     "Chưa thể gửi email lúc này. Vui lòng thử lại sau.");

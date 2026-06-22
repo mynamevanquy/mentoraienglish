@@ -7,7 +7,9 @@ import com.englishai.user.entity.User;
 import com.englishai.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.mail.MailProperties;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.core.session.SessionInformation;
@@ -37,6 +39,7 @@ public class PasswordResetService {
     private final PasswordResetTokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JavaMailSender mailSender;
+    private final MailProperties mailProperties;
     private final PasswordResetProperties properties;
     private final JdbcTemplate jdbcTemplate;
     private final SessionRegistry sessionRegistry;
@@ -44,6 +47,9 @@ public class PasswordResetService {
     @Transactional
     public void requestReset(String submittedEmail) {
         String email = normalizeEmail(submittedEmail);
+        log.info("password_reset_request_received recipient={} mailEnabled={}",
+                maskEmail(email),
+                properties.isMailEnabled());
         userRepository.findByEmail(email)
                 .filter(User::isEnabled)
                 .ifPresent(this::createTokenAndSendEmail);
@@ -95,9 +101,13 @@ public class PasswordResetService {
         tokenRepository.saveAndFlush(token);
 
         String resetLink = normalizedBaseUrl() + "/reset-password?token=" + rawToken;
+        log.info("password_reset_token_created recipient={} expiresAt={} deliveryMode={}",
+                maskEmail(user.getEmail()),
+                token.getExpiresAt(),
+                properties.isMailEnabled() ? "SMTP" : "LOG_ONLY");
         if (!properties.isMailEnabled()) {
-            log.warn("Password reset mail is disabled. Development reset link for {}: {}",
-                    user.getEmail(),
+            log.warn("password_reset_mail_disabled recipient={} developmentResetLink={}",
+                    maskEmail(user.getEmail()),
                     resetLink);
             return;
         }
@@ -120,8 +130,35 @@ public class PasswordResetService {
                 user.getFullName(),
                 resetLink,
                 properties.getTokenValidity().toMinutes()));
-        mailSender.send(message);
-        log.info("Password reset email sent to {}", user.getEmail());
+
+        long startedAt = System.nanoTime();
+        log.info("password_reset_mail_send_started recipient={} from={} smtpHost={} smtpPort={} smtpAuth={} startTls={}",
+                maskEmail(user.getEmail()),
+                properties.getFromEmail(),
+                mailProperties.getHost(),
+                mailProperties.getPort(),
+                mailProperties.getProperties().getOrDefault("mail.smtp.auth", "false"),
+                mailProperties.getProperties().getOrDefault("mail.smtp.starttls.enable", "false"));
+        try {
+            mailSender.send(message);
+            log.info("password_reset_mail_send_succeeded recipient={} smtpHost={} durationMs={}",
+                    maskEmail(user.getEmail()),
+                    mailProperties.getHost(),
+                    elapsedMillis(startedAt));
+        } catch (MailException e) {
+            Throwable rootCause = rootCause(e);
+            log.error(
+                    "password_reset_mail_send_failed recipient={} smtpHost={} smtpPort={} durationMs={} exception={} rootCause={} rootMessage={}",
+                    maskEmail(user.getEmail()),
+                    mailProperties.getHost(),
+                    mailProperties.getPort(),
+                    elapsedMillis(startedAt),
+                    e.getClass().getSimpleName(),
+                    rootCause.getClass().getSimpleName(),
+                    rootCause.getMessage(),
+                    e);
+            throw e;
+        }
     }
 
     private String generateToken() {
@@ -145,6 +182,26 @@ public class PasswordResetService {
 
     private String normalizeEmail(String email) {
         return email == null ? "" : email.trim().toLowerCase();
+    }
+
+    private String maskEmail(String email) {
+        int separator = email.indexOf('@');
+        if (separator <= 1) {
+            return "***";
+        }
+        return email.charAt(0) + "***" + email.substring(separator);
+    }
+
+    private long elapsedMillis(long startedAt) {
+        return (System.nanoTime() - startedAt) / 1_000_000;
+    }
+
+    private Throwable rootCause(Throwable throwable) {
+        Throwable current = throwable;
+        while (current.getCause() != null && current.getCause() != current) {
+            current = current.getCause();
+        }
+        return current;
     }
 
     private void expireSessions(String email) {
