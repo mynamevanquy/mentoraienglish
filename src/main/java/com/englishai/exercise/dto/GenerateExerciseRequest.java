@@ -1,7 +1,6 @@
 package com.englishai.exercise.dto;
 
 import com.englishai.common.enums.ExerciseType;
-import com.englishai.common.enums.Level;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -21,9 +20,6 @@ public class GenerateExerciseRequest {
 
     @NotNull
     private ExerciseType exerciseType;
-
-    @NotNull
-    private Level difficulty;
 
     @Min(1)
     @Max(20)

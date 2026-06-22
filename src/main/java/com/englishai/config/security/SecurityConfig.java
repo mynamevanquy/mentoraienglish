@@ -53,7 +53,7 @@ public class SecurityConfig {
             // ── Authorization ──────────────────────────────────────────────
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                        "/", "/login", "/register", "/pricing",
+                        "/", "/login", "/register", "/forgot-password", "/reset-password", "/pricing",
                         "/css/**", "/js/**", "/images/**", "/favicon.ico", "/favicon.png",
                         "/favicon-16.png", "/favicon-32.png", "/favicon-48.png",
                         "/apple-touch-icon.png",

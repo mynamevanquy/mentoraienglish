@@ -71,6 +71,29 @@
         .vocab-muted {
             color: var(--text-secondary);
         }
+
+        .daily-plan {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .plan-card {
+            padding: 18px 20px;
+        }
+
+        .plan-card strong {
+            display: block;
+            font-size: 26px;
+            margin-top: 4px;
+        }
+
+        @media (max-width: 768px) {
+            .daily-plan {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -90,8 +113,37 @@
         </div>
     </header>
 
+    <div class="daily-plan">
+        <div class="dash-card plan-card">
+            <span class="vocab-muted">Đã học hôm nay</span>
+            <strong><span th:text="${learnedToday}">0</span>/<span th:text="${dailyLimit}">10</span></strong>
+        </div>
+        <div class="dash-card plan-card">
+            <span class="vocab-muted">Có thể học thêm</span>
+            <strong th:text="${remainingToday}">10</strong>
+        </div>
+        <a class="dash-card plan-card text-decoration-none text-reset" th:href="@{/vocabulary/review}">
+            <span class="vocab-muted">Từ đang đến hạn ôn</span>
+            <strong th:text="${dueCount}">0</strong>
+        </a>
+    </div>
+
+    <div class="alert alert-info border-0 mb-4" th:if="${dueCount > 0}">
+        <i class="bi bi-clock-history me-2"></i>
+        Bạn đang có <strong th:text="${dueCount}">0</strong> từ đến hạn.
+        <a class="alert-link ms-1" th:href="@{/vocabulary/review}">Ôn trước khi học từ mới</a>
+        sẽ giúp ghi nhớ tốt hơn.
+    </div>
+
+    <div class="alert alert-success border-0 mb-4" th:if="${remainingToday == 0}">
+        <i class="bi bi-check-circle me-2"></i>
+        Bạn đã hoàn thành mục tiêu <strong th:text="${dailyLimit}">10</strong> từ mới hôm nay.
+        Hãy quay lại ôn tập thay vì học dồn thêm.
+    </div>
+
     <div class="level-cards">
-        <div class="level-card" th:each="entry : ${levelCounts}">
+        <div class="level-card" th:each="entry : ${levelCounts}"
+             th:style="${entry.key == recommendedLevel} ? 'border-color: var(--brand-primary)' : null">
             <div class="level-card-icon">
                 <i class="bi bi-book" th:if="${entry.key == 'BEGINNER'}"></i>
                 <i class="bi bi-book-half" th:if="${entry.key == 'INTERMEDIATE'}"></i>
@@ -102,17 +154,20 @@
                 <span th:if="${entry.key == 'INTERMEDIATE'}">Trung cấp</span>
                 <span th:if="${entry.key == 'ADVANCED'}">Nâng cao</span>
             </div>
+            <span class="badge text-bg-info mb-2" th:if="${entry.key == recommendedLevel}">Phù hợp với bạn</span>
             <div class="level-card-count">
                 <span th:text="${entry.value}">0</span> từ chưa học
             </div>
             <button class="btn btn-primary level-card-btn"
-                    th:if="${entry.value > 0}"
+                    th:if="${entry.value > 0 && remainingToday > 0}"
                     th:attr="hx-get=@{/vocabulary/learn/session(level=${entry.key})}"
                     hx-target="#learn-area"
                     hx-swap="innerHTML">
                 <i class="bi bi-play-fill"></i> Bắt đầu học
             </button>
             <span class="badge bg-secondary level-card-btn" th:if="${entry.value == 0}">Đã học hết</span>
+            <span class="badge bg-success level-card-btn"
+                  th:if="${entry.value > 0 && remainingToday == 0}">Đã đủ mục tiêu hôm nay</span>
         </div>
     </div>
 

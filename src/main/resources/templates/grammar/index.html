@@ -82,9 +82,10 @@
                     <h2 class="h5 mb-1">Chủ điểm</h2>
                     <p class="grammar-muted mb-0">Chọn một chủ điểm để xem quy tắc và ví dụ.</p>
                 </div>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 align-items-center">
+                    <span class="badge text-bg-info" th:if="${adaptiveSelection}">Tự động</span>
                     <select class="form-select" name="level" aria-label="Lọc theo trình độ">
-                        <option value="">Tất cả trình độ</option>
+                        <option value="">Tự động theo trình độ</option>
                         <option th:each="level : ${levels}"
                                 th:value="${level.name()}"
                                 th:selected="${selectedLevel == level}"

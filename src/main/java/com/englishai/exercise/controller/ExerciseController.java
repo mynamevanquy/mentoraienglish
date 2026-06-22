@@ -2,8 +2,10 @@ package com.englishai.exercise.controller;
 
 import com.englishai.common.enums.ExerciseType;
 import com.englishai.common.enums.Level;
+import com.englishai.common.enums.AttemptStatus;
 import com.englishai.exercise.dto.*;
 import com.englishai.exercise.service.ExerciseService;
+import com.englishai.exercise.service.LearnerLevelService;
 import com.englishai.user.entity.User;
 import com.englishai.user.repository.UserRepository;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,8 +26,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.security.Principal;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Controller
@@ -34,6 +39,7 @@ import java.util.UUID;
 public class ExerciseController {
 
     private final ExerciseService exerciseService;
+    private final LearnerLevelService learnerLevelService;
     private final UserRepository userRepository;
 
     @GetMapping
@@ -42,14 +48,20 @@ public class ExerciseController {
             @RequestParam(value = "exerciseType", required = false) ExerciseType exerciseType,
             @RequestParam(value = "difficulty", required = false) Level difficulty,
             @PageableDefault(size = 12) Pageable pageable,
+            Principal principal,
             Model model) {
-        ExerciseFilter filter = new ExerciseFilter(keyword, exerciseType, difficulty);
+        User user = getAuthenticatedUser(principal);
+        Level effectiveDifficulty = difficulty != null
+                ? difficulty
+                : learnerLevelService.determineLevel(user.getId());
+        ExerciseFilter filter = new ExerciseFilter(keyword, exerciseType, effectiveDifficulty);
         Page<ExerciseDto> exercises = exerciseService.getPublishedExercises(filter, pageable);
         model.addAttribute("exercises", exercises);
         model.addAttribute("filter", filter);
         model.addAttribute("exerciseTypes", ExerciseType.values());
         model.addAttribute("levels", Level.values());
-        model.addAttribute("listBaseUrl", buildListBaseUrl(keyword, exerciseType, difficulty));
+        model.addAttribute("adaptiveSelection", difficulty == null);
+        model.addAttribute("listBaseUrl", buildListBaseUrl(keyword, exerciseType, effectiveDifficulty));
         return "exercises/index";
     }
 
@@ -70,28 +82,27 @@ public class ExerciseController {
     public String attempt(@PathVariable UUID attemptId, Principal principal, Model model) {
         User user = getAuthenticatedUser(principal);
         ExerciseAttemptDto attempt = exerciseService.getAttempt(user.getId(), attemptId);
+        if (attempt.status() == AttemptStatus.COMPLETED) {
+            return "redirect:/exercises/attempt/" + attemptId + "/result";
+        }
         model.addAttribute("attempt", attempt);
         model.addAttribute("detail", exerciseService.getExerciseWithQuestions(attempt.exerciseId()));
         return "exercises/attempt";
     }
 
-    @PostMapping("/attempt/{attemptId}/answer")
-    public String answer(
+    @PostMapping("/attempt/{attemptId}/submit")
+    public String complete(
             @PathVariable UUID attemptId,
-            @RequestParam("questionId") UUID questionId,
-            @RequestParam("answer") String answer,
+            @RequestParam Map<String, String> requestParameters,
             Principal principal,
-            Model model) {
+            RedirectAttributes redirectAttributes) {
         User user = getAuthenticatedUser(principal);
-        SubmitAnswerResult result = exerciseService.submitAnswer(user.getId(), attemptId, questionId, answer);
-        model.addAttribute("result", result);
-        return "exercises/fragments/answer-feedback";
-    }
-
-    @PostMapping("/attempt/{attemptId}/complete")
-    public String complete(@PathVariable UUID attemptId, Principal principal) {
-        User user = getAuthenticatedUser(principal);
-        exerciseService.completeAttempt(user.getId(), attemptId);
+        try {
+            exerciseService.submitAttempt(user.getId(), attemptId, extractAnswers(requestParameters));
+        } catch (IllegalArgumentException | IllegalStateException exception) {
+            redirectAttributes.addFlashAttribute("errorMessage", exception.getMessage());
+            return "redirect:/exercises/attempt/" + attemptId;
+        }
         return "redirect:/exercises/attempt/" + attemptId + "/result";
     }
 
@@ -103,10 +114,11 @@ public class ExerciseController {
     }
 
     @GetMapping("/generate")
-    public String generateForm(Model model) {
+    public String generateForm(Principal principal, Model model) {
+        User user = getAuthenticatedUser(principal);
         model.addAttribute("generateExerciseRequest", new GenerateExerciseRequest());
         model.addAttribute("exerciseTypes", ExerciseType.values());
-        model.addAttribute("levels", Level.values());
+        model.addAttribute("learnerLevel", learnerLevelService.determineLevel(user.getId()));
         return "exercises/generate";
     }
 
@@ -119,7 +131,8 @@ public class ExerciseController {
             HttpServletResponse response,
             @RequestHeader(value = "HX-Request", required = false) String hxRequest) {
         model.addAttribute("exerciseTypes", ExerciseType.values());
-        model.addAttribute("levels", Level.values());
+        User user = getAuthenticatedUser(principal);
+        model.addAttribute("learnerLevel", learnerLevelService.determineLevel(user.getId()));
         if (bindingResult.hasErrors()) {
             if (hxRequest != null) {
                 StringBuilder errorMsg = new StringBuilder();
@@ -131,7 +144,6 @@ public class ExerciseController {
             return "exercises/generate";
         }
 
-        User user = getAuthenticatedUser(principal);
         ExerciseDto exercise;
         try {
             exercise = exerciseService.generateAiExercise(user.getId(), request);
@@ -174,5 +186,15 @@ public class ExerciseController {
             url.append(separator).append("difficulty=").append(difficulty.name());
         }
         return url.toString();
+    }
+
+    private Map<UUID, String> extractAnswers(Map<String, String> requestParameters) {
+        Map<UUID, String> answers = new HashMap<>();
+        requestParameters.forEach((name, value) -> {
+            if (name.startsWith("answer_")) {
+                answers.put(UUID.fromString(name.substring("answer_".length())), value);
+            }
+        });
+        return answers;
     }
 }

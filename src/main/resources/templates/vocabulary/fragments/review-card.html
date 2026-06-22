@@ -23,13 +23,13 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 80px;
+            width: 118px;
         }
 
         .quality-btn {
-            width: 46px;
-            height: 46px;
-            border-radius: 50%;
+            width: 100%;
+            min-height: 48px;
+            border-radius: 12px;
             border: 2px solid var(--surface-border);
             background: rgba(255, 255, 255, 0.02);
             color: var(--text-primary);
@@ -48,10 +48,8 @@
             box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
         }
 
-        .quality-0, .quality-1 { border-color: #ef4444; color: #ef4444; }
-        .quality-0:hover, .quality-1:hover { background: rgba(239, 68, 68, 0.15); }
-        .quality-2 { border-color: #f59e0b; color: #f59e0b; }
-        .quality-2:hover { background: rgba(245, 158, 11, 0.15); }
+        .quality-1 { border-color: #ef4444; color: #ef4444; }
+        .quality-1:hover { background: rgba(239, 68, 68, 0.15); }
         .quality-3 { border-color: #3b82f6; color: #3b82f6; }
         .quality-3:hover { background: rgba(59, 130, 246, 0.15); }
         .quality-4 { border-color: #10b981; color: #10b981; }
@@ -163,9 +161,10 @@
 
             <!-- Quality rating buttons -->
             <div class="review-actions mt-4">
-                <h5 class="text-center mb-3 fw-semibold text-secondary">Bạn nhớ từ này ở mức độ nào?</h5>
+                <h5 class="text-center mb-2 fw-semibold">Bạn nhớ từ này thế nào?</h5>
+                <p class="text-center vocab-muted small mb-3">Chọn theo khả năng tự nhớ trước khi xem đáp án.</p>
                 <div class="quality-buttons">
-                    <form th:each="q : ${#numbers.sequence(0, 5)}"
+                    <form th:each="q : ${reviewQualities}"
                           class="quality-form"
                           th:action="@{/vocabulary/review/{id}/submit(id=${userVocabulary.vocabularyId})}"
                           th:method="post"
@@ -175,8 +174,13 @@
                                     hx-indicator='#review-spinner'">
                         <input type="hidden" name="quality" th:value="${q}" />
                         <input type="hidden" name="level" th:value="${level}" th:if="${level != null}" />
-                        <button th:class="'quality-btn quality-' + ${q}" type="submit" th:text="${q}">0</button>
-                        <span class="quality-desc" th:text="${q == 0 ? 'Quên sạch' : (q == 1 ? 'Mơ hồ' : (q == 2 ? 'Lờ mờ' : (q == 3 ? 'Nhớ chậm' : (q == 4 ? 'Nhớ tốt' : 'Hoàn hảo'))))}"></span>
+                        <input type="hidden" name="mode" th:value="${reviewMode}" />
+                        <button th:class="'quality-btn quality-' + ${q}" type="submit"
+                                th:text="${q == 1 ? 'Quên' : (q == 3 ? 'Khó' : (q == 4 ? 'Nhớ' : 'Dễ'))}">Nhớ</button>
+                        <span class="quality-desc"
+                              th:text="${q == 1 ? 'Ôn lại sau 10 phút' : (q == 3 ? 'Nhớ nhưng rất chậm' : (q == 4 ? 'Nhớ sau chút suy nghĩ' : 'Nhớ ngay, không do dự'))}">
+                            Mô tả
+                        </span>
                     </form>
                 </div>
             </div>
@@ -189,8 +193,14 @@
 
     <div class="review-empty text-center p-5" th:if="${userVocabulary == null}">
         <i class="bi bi-emoji-smile display-3 text-success mb-3"></i>
-        <h2 class="mt-2 h4 fw-bold">Tuyệt vời! Không còn từ nào cần ôn</h2>
-        <p class="vocab-muted mb-4">Bạn đã hoàn thành tất cả các thẻ ôn tập đến hạn.</p>
+        <h2 class="mt-2 h4 fw-bold"
+            th:text="${reviewMode == 'random'} ? 'Đã hết từ phù hợp trong lượt luyện này' : 'Tuyệt vời! Không còn từ nào cần ôn'">
+            Hoàn thành.
+        </h2>
+        <p class="vocab-muted mb-4"
+           th:text="${reviewMode == 'random'} ? 'Hãy quay lại lịch ôn chính hoặc chọn một trình độ khác.' : 'Bạn đã hoàn thành tất cả các thẻ ôn tập đến hạn.'">
+            Bạn đã hoàn thành lượt ôn.
+        </p>
         <a class="btn btn-primary btn-lg rounded-pill px-4" th:href="@{/vocabulary/learn}">
             <i class="bi bi-lightning-charge-fill me-1"></i> Học từ mới
         </a>

@@ -30,22 +30,95 @@
             font-size: 14px;
         }
 
-        .admin-grid {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) 360px;
-            gap: 24px;
-            align-items: start;
-        }
-
         .panel {
             padding: 24px;
         }
 
+        .create-panel {
+            margin-bottom: 24px;
+        }
+
+        .panel-heading {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .panel-heading h2 {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0 0 4px;
+        }
+
+        .panel-heading p {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin: 0;
+        }
+
+        .create-form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px 20px;
+        }
+
+        .form-field {
+            min-width: 0;
+        }
+
+        .form-field-full {
+            grid-column: 1 / -1;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            padding-top: 4px;
+        }
+
+        .password-hint {
+            color: var(--text-secondary);
+            font-size: 12px;
+            margin: 7px 0 0;
+        }
+
         .filter-row {
             display: grid;
-            grid-template-columns: minmax(220px, 1fr) 150px 150px auto;
+            grid-template-columns: minmax(220px, 1.4fr) repeat(3, minmax(145px, 0.7fr)) auto auto;
+            gap: 12px;
+            align-items: end;
+            margin-bottom: 20px;
+        }
+
+        .filter-field label {
+            display: block;
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 600;
+            margin: 0 0 7px;
+        }
+
+        .level-summary {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 12px;
             margin-bottom: 20px;
+        }
+
+        .level-summary-card {
+            padding: 14px 16px;
+            border: 1px solid var(--surface-border);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .level-summary-card strong {
+            display: block;
+            font-size: 22px;
         }
 
         .form-control,
@@ -55,6 +128,16 @@
             border-radius: 10px !important;
             color: var(--text-primary) !important;
             font-size: 14px !important;
+            min-height: 44px;
+            padding: 10px 14px !important;
+            transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--brand-primary) !important;
+            background: rgba(255, 255, 255, 0.05) !important;
+            box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.14) !important;
         }
 
         .form-select option {
@@ -172,6 +255,12 @@
             padding: 10px 16px;
         }
 
+        .filter-row > .btn-primary-soft,
+        .filter-row > .btn-ghost {
+            min-height: 44px;
+            white-space: nowrap;
+        }
+
         .btn-ghost {
             background: rgba(255, 255, 255, 0.04);
             color: var(--text-primary);
@@ -194,10 +283,10 @@
             margin-top: 6px;
         }
 
-        .side-section + .side-section {
-            border-top: 1px solid var(--surface-border);
-            margin-top: 24px;
-            padding-top: 24px;
+        .has-error .form-control,
+        .has-error .form-select {
+            border-color: rgba(255, 107, 107, 0.65) !important;
+            background: rgba(255, 107, 107, 0.05) !important;
         }
 
         .pagination .page-link {
@@ -213,9 +302,39 @@
         }
 
         @media (max-width: 1100px) {
-            .admin-grid,
+            .filter-row {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .level-summary {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .create-form-grid,
             .filter-row {
                 grid-template-columns: 1fr;
+            }
+
+            .form-field-full {
+                grid-column: auto;
+            }
+
+            .form-actions,
+            .panel-heading {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .form-actions .btn-primary-soft,
+            .form-actions .btn-ghost {
+                width: 100%;
+            }
+
+            .form-actions > .d-flex {
+                flex-direction: column;
+                width: 100%;
             }
         }
     </style>
@@ -230,25 +349,119 @@
             </div>
         </div>
 
-        <div class="admin-grid">
-            <section class="dash-card panel">
+        <section class="dash-card panel create-panel">
+            <div class="panel-heading">
+                <div>
+                    <h2><i class="bi bi-person-plus me-1"></i> Tạo người dùng mới</h2>
+                    <p>Thiết lập thông tin đăng nhập và quyền truy cập ban đầu.</p>
+                </div>
+            </div>
+
+            <form th:action="@{/admin/users}" th:object="${createRequest}" method="post" novalidate>
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <div class="form-error mb-3" th:if="${#fields.hasGlobalErrors()}"
+                     th:each="err : ${#fields.globalErrors()}" th:text="${err}"></div>
+
+                <div class="create-form-grid">
+                    <div class="form-field" th:classappend="${#fields.hasErrors('fullName')} ? 'has-error'">
+                        <label class="form-label" for="createFullName">Họ và tên <span class="text-danger">*</span></label>
+                        <input id="createFullName" class="form-control" th:field="*{fullName}"
+                               placeholder="Ví dụ: Nguyễn Văn An" autocomplete="name" maxlength="150" required>
+                        <div class="field-error" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}"></div>
+                    </div>
+
+                    <div class="form-field" th:classappend="${#fields.hasErrors('email')} ? 'has-error'">
+                        <label class="form-label" for="createEmail">Email đăng nhập <span class="text-danger">*</span></label>
+                        <input id="createEmail" type="email" class="form-control" th:field="*{email}"
+                               placeholder="hocvien@example.com" autocomplete="email" maxlength="255" required>
+                        <div class="field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+                    </div>
+
+                    <div class="form-field" th:classappend="${#fields.hasErrors('password')} ? 'has-error'">
+                        <label class="form-label" for="createPassword">Mật khẩu tạm thời <span class="text-danger">*</span></label>
+                        <input id="createPassword" type="password" class="form-control" th:field="*{password}"
+                               placeholder="Tối thiểu 8 ký tự" autocomplete="new-password" minlength="8" required>
+                        <p class="password-hint">Sử dụng ít nhất 8 ký tự; nên kết hợp chữ, số và ký tự đặc biệt.</p>
+                        <div class="field-error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+                    </div>
+
+                    <div class="form-field" th:classappend="${#fields.hasErrors('role')} ? 'has-error'">
+                        <label class="form-label" for="createRole">Vai trò <span class="text-danger">*</span></label>
+                        <select id="createRole" class="form-select" th:field="*{role}" required>
+                            <option th:each="role : ${roles}" th:value="${role}"
+                                    th:text="${role.name() == 'ADMIN' ? 'Quản trị' : 'Học viên'}">Học viên</option>
+                        </select>
+                        <div class="field-error" th:if="${#fields.hasErrors('role')}" th:errors="*{role}"></div>
+                    </div>
+
+                    <div class="form-field form-field-full form-actions">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch"
+                                   id="createEnabled" th:field="*{enabled}">
+                            <label class="form-check-label muted" for="createEnabled">Cho phép đăng nhập ngay</label>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a class="btn-ghost" th:href="@{/admin/users}">
+                                <i class="bi bi-arrow-counterclockwise"></i> Làm mới
+                            </a>
+                            <button type="submit" class="btn-primary-soft">
+                                <i class="bi bi-person-check"></i> Tạo tài khoản
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        <section class="dash-card panel">
+                <div class="level-summary">
+                    <a class="level-summary-card text-decoration-none text-reset"
+                       th:each="level : ${learnerLevels}"
+                       th:href="@{/admin/users(filterLearnerLevel=${level})}">
+                        <span class="muted" th:text="${@messageHelper.level(level)}">Trình độ</span>
+                        <strong th:text="${learnerLevelCounts.get(level)}">0</strong>
+                    </a>
+                </div>
+
                 <form th:action="@{/admin/users}" method="get" class="filter-row">
-                    <input type="search" name="keyword" class="form-control" placeholder="Tìm theo tên hoặc email"
-                           th:value="${keyword}">
-                    <select name="role" class="form-select">
-                        <option value="">Tất cả vai trò</option>
-                        <option th:each="role : ${roles}" th:value="${role}"
-                                th:text="${role.name() == 'ADMIN' ? 'Quản trị' : 'Học viên'}"
-                                th:selected="${selectedRole == role}">USER</option>
-                    </select>
-                    <select name="enabled" class="form-select">
-                        <option value="">Mọi trạng thái</option>
-                        <option value="true" th:selected="${selectedEnabled == true}">Đang hoạt động</option>
-                        <option value="false" th:selected="${selectedEnabled == false}">Đã khóa</option>
-                    </select>
+                    <div class="filter-field">
+                        <label for="filterKeyword">Tìm kiếm</label>
+                        <input id="filterKeyword" type="search" name="keyword" class="form-control"
+                               placeholder="Tên hoặc email" th:value="${keyword}" autocomplete="off">
+                    </div>
+                    <div class="filter-field">
+                        <label for="filterRole">Vai trò</label>
+                        <select id="filterRole" name="filterRole" class="form-select">
+                            <option value="">Tất cả vai trò</option>
+                            <option th:each="role : ${roles}" th:value="${role}"
+                                    th:text="${role.name() == 'ADMIN' ? 'Quản trị' : 'Học viên'}"
+                                    th:selected="${selectedRole == role}">USER</option>
+                        </select>
+                    </div>
+                    <div class="filter-field">
+                        <label for="filterEnabled">Trạng thái</label>
+                        <select id="filterEnabled" name="filterEnabled" class="form-select">
+                            <option value="">Mọi trạng thái</option>
+                            <option value="true" th:selected="${selectedEnabled == true}">Đang hoạt động</option>
+                            <option value="false" th:selected="${selectedEnabled == false}">Đã khóa</option>
+                        </select>
+                    </div>
+                    <div class="filter-field">
+                        <label for="filterLearnerLevel">Trình độ</label>
+                        <select id="filterLearnerLevel" name="filterLearnerLevel" class="form-select">
+                            <option value="">Mọi trình độ</option>
+                            <option th:each="level : ${learnerLevels}"
+                                    th:value="${level}"
+                                    th:text="${@messageHelper.level(level)}"
+                                    th:selected="${selectedLearnerLevel == level}">Trình độ</option>
+                        </select>
+                    </div>
                     <button class="btn-primary-soft" type="submit">
                         <i class="bi bi-search"></i> Lọc
                     </button>
+                    <a class="btn-ghost" th:href="@{/admin/users}" aria-label="Xóa bộ lọc">
+                        <i class="bi bi-x-lg"></i> Đặt lại
+                    </a>
                 </form>
 
                 <div class="table-responsive">
@@ -257,6 +470,7 @@
                         <tr>
                             <th>Người dùng</th>
                             <th>Vai trò</th>
+                            <th>Trình độ học</th>
                             <th>Trạng thái</th>
                             <th>Ngày tạo</th>
                             <th class="text-end">Thao tác</th>
@@ -274,6 +488,17 @@
                                       th:text="${user.roleLabel()}">Học viên</span>
                             </td>
                             <td>
+                                <div th:if="${user.hasLearnerProfile()}">
+                                    <span class="role-badge role-user"
+                                          th:text="${@messageHelper.level(user.learnerProfile().level())}">Trình độ</span>
+                                    <div class="muted small mt-1"
+                                         th:text="${@messageHelper.assessmentStatus(user.learnerProfile().assessmentStatus()) + ' · ' + user.learnerProfile().confidencePercent() + '% tin cậy'}">
+                                        Trạng thái đánh giá
+                                    </div>
+                                </div>
+                                <span class="muted" th:unless="${user.hasLearnerProfile()}">—</span>
+                            </td>
+                            <td>
                                 <span th:if="${user.enabled()}" class="status-badge status-active">
                                     <i class="bi bi-check-circle"></i> Hoạt động
                                 </span>
@@ -284,8 +509,8 @@
                             <td class="created-date" th:text="${user.createdAt() != null ? #strings.substring(user.createdAt().toString(), 0, 10) : '-'}">2026-06-01</td>
                             <td>
                                 <div class="d-flex justify-content-end gap-2 flex-wrap">
-                                    <a class="btn-ghost" th:href="@{/admin/users/{id}/edit(id=${user.id()})}">
-                                        <i class="bi bi-pencil"></i> Sửa
+                                    <a class="btn-ghost" th:href="@{/admin/users/{id}(id=${user.id()})}">
+                                        <i class="bi bi-person-vcard"></i> Chi tiết
                                     </a>
                                     <form th:action="@{/admin/users/{id}/toggle-enabled(id=${user.id()})}" method="post">
                                         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
@@ -303,7 +528,7 @@
                             </td>
                         </tr>
                         <tr th:if="${users.empty}">
-                            <td colspan="5" class="text-center muted py-4">Không có người dùng phù hợp.</td>
+                            <td colspan="6" class="text-center muted py-4">Không có người dùng phù hợp.</td>
                         </tr>
                         </tbody>
                     </table>
@@ -313,107 +538,24 @@
                     <ul class="pagination justify-content-center mb-0">
                         <li class="page-item" th:classappend="${users.first} ? 'disabled'">
                             <a class="page-link"
-                               th:href="@{/admin/users(page=${users.number - 1},keyword=${keyword},role=${selectedRole},enabled=${selectedEnabled})}">
+                               th:href="@{/admin/users(page=${users.number - 1},keyword=${keyword},filterRole=${selectedRole},filterEnabled=${selectedEnabled},filterLearnerLevel=${selectedLearnerLevel})}">
                                 <i class="bi bi-chevron-left"></i>
                             </a>
                         </li>
                         <li class="page-item" th:each="pageNo : ${#numbers.sequence(0, users.totalPages - 1)}"
                             th:classappend="${users.number == pageNo} ? 'active'">
                             <a class="page-link" th:text="${pageNo + 1}"
-                               th:href="@{/admin/users(page=${pageNo},keyword=${keyword},role=${selectedRole},enabled=${selectedEnabled})}">1</a>
+                               th:href="@{/admin/users(page=${pageNo},keyword=${keyword},filterRole=${selectedRole},filterEnabled=${selectedEnabled},filterLearnerLevel=${selectedLearnerLevel})}">1</a>
                         </li>
                         <li class="page-item" th:classappend="${users.last} ? 'disabled'">
                             <a class="page-link"
-                               th:href="@{/admin/users(page=${users.number + 1},keyword=${keyword},role=${selectedRole},enabled=${selectedEnabled})}">
+                               th:href="@{/admin/users(page=${users.number + 1},keyword=${keyword},filterRole=${selectedRole},filterEnabled=${selectedEnabled},filterLearnerLevel=${selectedLearnerLevel})}">
                                 <i class="bi bi-chevron-right"></i>
                             </a>
                         </li>
                     </ul>
                 </nav>
-            </section>
-
-            <aside class="dash-card panel">
-                <div class="side-section">
-                    <h2 class="h5 mb-3">Tạo người dùng</h2>
-                    <form th:action="@{/admin/users}" th:object="${createRequest}" method="post" novalidate>
-                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                        <div class="form-error mb-3" th:if="${#fields.hasGlobalErrors()}" th:each="err : ${#fields.globalErrors()}" th:text="${err}"></div>
-                        <div class="mb-3">
-                            <label class="form-label" for="createFullName">Họ tên</label>
-                            <input id="createFullName" class="form-control" th:field="*{fullName}">
-                            <div class="field-error" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}"></div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label" for="createEmail">Email</label>
-                            <input id="createEmail" type="email" class="form-control" th:field="*{email}">
-                            <div class="field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label" for="createPassword">Mật khẩu</label>
-                            <input id="createPassword" type="password" class="form-control" th:field="*{password}">
-                            <div class="field-error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label" for="createRole">Vai trò</label>
-                            <select id="createRole" class="form-select" th:field="*{role}">
-                                <option th:each="role : ${roles}" th:value="${role}"
-                                        th:text="${role.name() == 'ADMIN' ? 'Quản trị' : 'Học viên'}">USER</option>
-                            </select>
-                        </div>
-                        <div class="form-check form-switch mb-3">
-                            <input class="form-check-input" type="checkbox" role="switch" id="createEnabled" th:field="*{enabled}">
-                            <label class="form-check-label muted" for="createEnabled">Cho phép đăng nhập</label>
-                        </div>
-                        <button type="submit" class="btn-primary-soft w-100">
-                            <i class="bi bi-person-plus"></i> Tạo tài khoản
-                        </button>
-                    </form>
-                </div>
-
-                <div class="side-section" th:if="${editingUser != null}">
-                    <h2 class="h5 mb-3">Chỉnh sửa người dùng</h2>
-                    <form th:action="@{/admin/users/{id}(id=${editingUser.id})}" th:object="${updateRequest}" method="post" novalidate>
-                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                        <div class="form-error mb-3" th:if="${#fields.hasGlobalErrors()}" th:each="err : ${#fields.globalErrors()}" th:text="${err}"></div>
-                        <div class="mb-3">
-                            <label class="form-label" for="editFullName">Họ tên</label>
-                            <input id="editFullName" class="form-control" th:field="*{fullName}">
-                            <div class="field-error" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}"></div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label" for="editEmail">Email</label>
-                            <input id="editEmail" type="email" class="form-control" th:field="*{email}">
-                            <div class="field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label" for="editRole">Vai trò</label>
-                            <select id="editRole" class="form-select" th:field="*{role}">
-                                <option th:each="role : ${roles}" th:value="${role}"
-                                        th:text="${role.name() == 'ADMIN' ? 'Quản trị' : 'Học viên'}">USER</option>
-                            </select>
-                        </div>
-                        <div class="form-check form-switch mb-3">
-                            <input class="form-check-input" type="checkbox" role="switch" id="editEnabled" th:field="*{enabled}">
-                            <label class="form-check-label muted" for="editEnabled">Cho phép đăng nhập</label>
-                        </div>
-                        <button type="submit" class="btn-primary-soft w-100">
-                            <i class="bi bi-save"></i> Lưu thay đổi
-                        </button>
-                    </form>
-
-                    <form class="mt-4" th:action="@{/admin/users/{id}/password(id=${editingUser.id})}"
-                          th:object="${resetPasswordRequest}" method="post" novalidate>
-                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                        <label class="form-label" for="newPassword">Đặt lại mật khẩu</label>
-                        <div class="d-flex gap-2">
-                            <input id="newPassword" type="password" class="form-control" th:field="*{newPassword}" placeholder="Mật khẩu mới">
-                            <button type="submit" class="btn-ghost">Đổi</button>
-                        </div>
-                        <div class="field-error" th:if="${#fields.hasErrors('newPassword')}" th:errors="*{newPassword}"></div>
-                    </form>
-                </div>
-            </aside>
-        </div>
+        </section>
     </div>
 
     <script th:inline="javascript">

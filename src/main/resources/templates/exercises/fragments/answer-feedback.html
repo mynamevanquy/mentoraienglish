@@ -1,8 +1,0 @@
-<div xmlns:th="http://www.thymeleaf.org"
-     class="alert"
-     th:classappend="${result.correct} ? ' alert-success' : ' alert-warning'">
-    <div class="fw-semibold" th:text="${result.correct} ? 'Chính xác' : 'Cần xem lại câu trả lời'">Feedback</div>
-    <div th:text="${result.pointsEarned + '/' + result.maxPoints + ' điểm'}">0/1 points</div>
-    <p class="mb-1" th:if="${result.explanation}" th:text="${result.explanation}">Explanation</p>
-    <p class="mb-0" th:if="${result.aiFeedback}" th:text="${result.aiFeedback}">AI feedback</p>
-</div>

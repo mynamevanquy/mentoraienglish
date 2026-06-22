@@ -28,6 +28,9 @@
                 <span class="badge" th:classappend="${answer.correct} ? ' text-bg-success' : ' text-bg-warning'" th:text="${answer.pointsEarned + '/' + answer.maxPoints}">0/1</span>
             </div>
             <p class="mb-1"><span class="exercise-muted">Câu trả lời của bạn: </span><span th:text="${answer.userAnswer}">answer</span></p>
+            <p class="mb-1" th:if="${!answer.correct}">
+                <span class="exercise-muted">Đáp án đúng: </span><span th:text="${answer.correctAnswer}">correct answer</span>
+            </p>
             <p class="mb-1" th:if="${answer.explanation}" th:text="${answer.explanation}">Explanation</p>
             <p class="mb-0" th:if="${answer.aiFeedback}" th:text="${answer.aiFeedback}">AI feedback</p>
         </article>

@@ -64,9 +64,10 @@ public class ExerciseGrader {
 
     private String normalizeOrder(String value) {
         return normalize(value)
-                .replace("[", "")
-                .replace("]", "")
-                .replace(",", " ");
+                .replaceAll("[\\[\\]\"']", "")
+                .replaceAll("[,;|]", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
     }
 
     private String defaultFeedback(boolean correct) {

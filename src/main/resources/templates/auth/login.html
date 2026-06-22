@@ -26,6 +26,13 @@
             <span>Bạn đã đăng xuất thành công.</span>
         </div>
 
+        <div class="alert alert-success py-2 px-3 mb-3 border-0 rounded-3 text-start d-flex align-items-center gap-2"
+             style="font-size: 13px; background: rgba(78, 205, 196, 0.12); color: var(--success);"
+             th:if="${successMessage}">
+            <i class="bi bi-check-circle-fill"></i>
+            <span th:text="${successMessage}"></span>
+        </div>
+
         <!-- Session expired alert -->
         <div class="alert alert-danger py-2 px-3 mb-3 border-0 rounded-3 text-start d-flex align-items-center gap-2" 
              style="font-size: 13px; background: rgba(255, 107, 107, 0.12); color: var(--danger);" 
@@ -61,7 +68,7 @@
                         Ghi nhớ đăng nhập
                     </label>
                 </div>
-                <a href="#" class="forgot-link text-decoration-none fs-7" style="color: var(--brand-primary);">Quên mật khẩu?</a>
+                <a th:href="@{/forgot-password}" class="forgot-link text-decoration-none fs-7" style="color: var(--brand-primary);">Quên mật khẩu?</a>
             </div>
 
             <!-- Submit Button -->

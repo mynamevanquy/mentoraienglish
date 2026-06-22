@@ -84,7 +84,8 @@
             <h1 class="vocab-title">Từ vựng</h1>
             <p class="vocab-subtitle">Tìm kiếm, lưu trữ và ôn tập từ vựng bằng phương pháp lặp lại ngắt quãng.</p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 flex-wrap">
+            <span class="badge text-bg-info align-self-center" th:if="${adaptiveSelection}">Đề xuất theo trình độ</span>
             <a class="btn btn-primary" th:href="@{/vocabulary/learn}">
                 <i class="bi bi-lightning-charge"></i> Học mới
             </a>
@@ -114,7 +115,7 @@
                        th:value="${keyword}"
                        placeholder="Tìm kiếm từ vựng...">
                 <select class="form-select" name="level">
-                    <option value="">Tất cả cấp độ</option>
+                    <option value="">Tự động theo trình độ</option>
                     <option th:each="level : ${levels}"
                             th:value="${level.name()}"
                             th:selected="${selectedLevel == level.name()}"

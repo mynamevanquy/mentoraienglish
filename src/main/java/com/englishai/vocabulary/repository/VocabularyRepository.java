@@ -25,6 +25,11 @@ public interface VocabularyRepository extends JpaRepository<Vocabulary, UUID> {
 
     long countByDifficultyLevel(Level difficultyLevel);
 
+    @Query("SELECT COUNT(v) FROM Vocabulary v WHERE v.id NOT IN " +
+           "(SELECT uv.vocabulary.id FROM UserVocabulary uv WHERE uv.user.id = :userId) " +
+           "AND (:level IS NULL OR v.difficultyLevel = :level)")
+    long countUnlearnedByUser(@Param("userId") UUID userId, @Param("level") Level level);
+
     @Query("SELECT v FROM Vocabulary v WHERE v.id NOT IN " +
            "(SELECT uv.vocabulary.id FROM UserVocabulary uv WHERE uv.user.id = :userId) " +
            "AND (:level IS NULL OR v.difficultyLevel = :level) " +

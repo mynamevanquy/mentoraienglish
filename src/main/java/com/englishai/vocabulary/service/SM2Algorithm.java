@@ -62,31 +62,41 @@ public final class SM2Algorithm {
         int newInterval;
         double newEF;
 
+        Instant now = Instant.now();
+        Instant nextReviewAt;
+
         if (quality < 3) {
-            // Failed recall — reset to beginning
+            // Failed recall — show the card again soon instead of hiding it for a full day.
             newRepetitions = 0;
-            newInterval = 1;
-            newEF = easinessFactor; // EF does not decrease on first failure per SM-2 spec
+            newInterval = 0;
+            newEF = easinessFactor - 0.20;
+            nextReviewAt = now.plus(10, ChronoUnit.MINUTES);
         } else {
-            // Successful recall — advance the schedule
             newRepetitions = repetitions + 1;
 
             if (repetitions == 0) {
-                newInterval = 1;
+                newInterval = quality == 5 ? 4 : 1;
             } else if (repetitions == 1) {
-                newInterval = 6;
+                newInterval = switch (quality) {
+                    case 3 -> 3;
+                    case 5 -> 10;
+                    default -> 6;
+                };
             } else {
-                newInterval = (int) Math.round(interval * easinessFactor);
+                double multiplier = switch (quality) {
+                    case 3 -> 1.20;
+                    case 5 -> easinessFactor * 1.30;
+                    default -> easinessFactor;
+                };
+                newInterval = Math.max(1, (int) Math.round(interval * multiplier));
             }
 
-            // Update EF: EF' = EF + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02))
             newEF = easinessFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+            nextReviewAt = now.plus(newInterval, ChronoUnit.DAYS);
         }
 
         // Enforce minimum EF
         newEF = Math.max(newEF, MIN_EASINESS_FACTOR);
-
-        Instant nextReviewAt = Instant.now().plus(newInterval, ChronoUnit.DAYS);
 
         return new SM2Result(newEF, newInterval, newRepetitions, nextReviewAt);
     }

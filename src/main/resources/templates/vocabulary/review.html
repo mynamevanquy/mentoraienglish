@@ -16,12 +16,12 @@
         <div>
             <h1 class="h3 mb-1">Ôn tập từ vựng</h1>
             <p class="vocab-muted mb-0">
-                Cần ôn tập <span th:text="${dueCount}">0</span> từ.
+                Có <strong th:text="${dueCount}">0</strong> từ đến hạn. Hãy tự nhớ nghĩa trước khi mở đáp án.
             </p>
         </div>
         <div class="d-flex gap-2 flex-shrink-0">
             <a class="btn btn-outline-light" th:href="@{/vocabulary/review/random}">
-                <i class="bi bi-shuffle"></i> Ôn ngẫu nhiên
+                <i class="bi bi-shuffle"></i> Luyện thêm
             </a>
             <a class="btn btn-outline-light" th:href="@{/vocabulary}">
                 <i class="bi bi-arrow-left"></i> Danh sách từ vựng

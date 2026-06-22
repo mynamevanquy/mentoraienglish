@@ -15,6 +15,7 @@ import com.englishai.conversation.entity.Conversation;
 import com.englishai.conversation.entity.ConversationMessage;
 import com.englishai.conversation.repository.ConversationMessageRepository;
 import com.englishai.conversation.repository.ConversationRepository;
+import com.englishai.exercise.service.LearnerLevelService;
 import com.englishai.user.entity.User;
 import com.englishai.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -46,6 +48,7 @@ public class ConversationService {
     private final UserRepository userRepository;
     private final AiService aiService;
     private final GroqAiProperties groqAiProperties;
+    private final LearnerLevelService learnerLevelService;
 
     @Transactional
     public ConversationDto createConversation(UUID userId, String title) {
@@ -53,10 +56,11 @@ public class ConversationService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + userId));
 
         String safeTitle = StringUtils.hasText(title) ? title.trim() : "New English chat";
+        String learnerLevel = learnerLevelService.determineLevel(userId).name();
         Conversation conversation = Conversation.builder()
                 .user(user)
                 .title(safeTitle)
-                .systemPrompt(buildTutorSystemPrompt("INTERMEDIATE"))
+                .systemPrompt(buildTutorSystemPrompt(learnerLevel))
                 .modelUsed(groqAiProperties.getChatModel())
                 .status(ConversationStatus.ACTIVE)
                 .build();
@@ -169,7 +173,10 @@ public class ConversationService {
 
     private List<GroqAiRequest.Message> buildAiMessages(Conversation conversation, String userMessage) {
         List<GroqAiRequest.Message> messages = new ArrayList<>();
-        messages.add(new GroqAiRequest.Message("system", conversation.getSystemPrompt()));
+        String currentSystemPrompt = buildTutorSystemPrompt(
+                learnerLevelService.determineLevel(conversation.getUser().getId()).name());
+        conversation.setSystemPrompt(currentSystemPrompt);
+        messages.add(new GroqAiRequest.Message("system", currentSystemPrompt));
 
         List<ConversationMessage> context = new ArrayList<>(
                 conversationMessageRepository.findTop20ByConversationIdOrderByCreatedAtDesc(conversation.getId()));
@@ -193,9 +200,18 @@ public class ConversationService {
         return """
                 You are Aria, a friendly AI English tutor.
                 The user's English level is %s.
+                Adapt vocabulary, sentence length, explanation depth, and question difficulty to that level.
+                For BEGINNER, use short sentences, common words, and more Vietnamese support.
+                For INTERMEDIATE, use natural everyday English and moderate explanations.
+                For ADVANCED, use nuanced vocabulary, idiomatic English, and challenging follow-up questions.
                 After each user message, provide a natural conversational response in English.
-                When useful, add a [CORRECTIONS] section with brief grammar corrections and bilingual EN + VI explanations.
-                When useful, add a [VOCABULARY] section suggesting 1-2 advanced words related to the topic.
+                When the user's English needs correction, add a [CORRECTIONS] section.
+                In [CORRECTIONS], keep the original and corrected English text in English, but write every explanation entirely in Vietnamese.
+                Use this format for each correction: original -> corrected: giải thích bằng tiếng Việt.
+                If no correction is needed, omit the [CORRECTIONS] section completely. Never write "None needed" or a similar message.
+                When useful, add a [VOCABULARY] section suggesting 1-2 English words or phrases related to the topic.
+                In [VOCABULARY], explain the Vietnamese meaning and usage in Vietnamese. English is allowed only for the suggested word, phrase, or example sentence.
+                Use this format for each suggestion: word or phrase — nghĩa tiếng Việt; cách dùng bằng tiếng Việt; Example: English example sentence.
                 Keep corrections encouraging and practical. Never shame the user.
                 Never break character as Aria.
                 """.formatted(userLevel);
@@ -278,6 +294,8 @@ public class ConversationService {
                 .map(String::trim)
                 .filter(line -> !line.isBlank())
                 .map(line -> line.replaceFirst("^[-*\\d.)\\s]+", ""))
+                .map(line -> line.replaceFirst("^[→➜➡]+\\s*", ""))
+                .filter(line -> !isNoCorrectionMessage(line))
                 .map(line -> {
                     String original = "";
                     String corrected = "";
@@ -299,6 +317,21 @@ public class ConversationService {
                             .build();
                 })
                 .toList();
+    }
+
+    private boolean isNoCorrectionMessage(String line) {
+        String normalized = line.toLowerCase(Locale.ROOT)
+                .replaceAll("[^\\p{L}\\p{N}\\s]", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+        return normalized.isBlank()
+                || normalized.startsWith("none needed")
+                || normalized.startsWith("no correction")
+                || normalized.startsWith("no corrections")
+                || normalized.contains("sentence is correct")
+                || normalized.contains("sentence is perfect")
+                || normalized.contains("không cần sửa")
+                || normalized.contains("không có lỗi");
     }
 
     private List<String> parseVocabulary(String section) {

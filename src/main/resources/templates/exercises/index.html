@@ -37,9 +37,12 @@
             <h1 class="h3 mb-1">Luyện tập & Đánh giá</h1>
             <p class="exercise-muted mb-0">Luyện tập ngữ pháp, từ vựng, viết và nghe hiểu.</p>
         </div>
-        <a class="btn btn-primary" th:href="@{/exercises/generate}">
-            <i class="bi bi-stars"></i> Tự tạo bài tập
-        </a>
+        <div class="d-flex gap-2 align-items-center">
+            <span class="badge text-bg-info" th:if="${adaptiveSelection}">Đang lọc theo trình độ</span>
+            <a class="btn btn-primary" th:href="@{/exercises/generate}">
+                <i class="bi bi-stars"></i> Tự tạo bài tập
+            </a>
+        </div>
     </header>
 
     <section class="dash-card">
@@ -50,7 +53,7 @@
                 <option th:each="type : ${exerciseTypes}" th:value="${type.name()}" th:selected="${filter.exerciseType == type}" th:text="${@messageHelper.exerciseType(type)}">MULTIPLE_CHOICE</option>
             </select>
             <select class="form-select" name="difficulty" aria-label="Lọc theo trình độ">
-                <option value="">Tất cả trình độ</option>
+                <option value="">Tự động theo trình độ</option>
                 <option th:each="level : ${levels}" th:value="${level.name()}" th:selected="${filter.difficulty == level}" th:text="${@messageHelper.level(level)}">BEGINNER</option>
             </select>
             <button class="btn btn-outline-light" type="submit" aria-label="Tìm kiếm"><i class="bi bi-search"></i></button>

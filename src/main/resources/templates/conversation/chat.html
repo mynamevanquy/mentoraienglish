@@ -12,6 +12,7 @@
         }
         .message-list {
             overflow-y: auto;
+            overflow-x: hidden;
             flex: 1 1 0;
             min-height: 0;
             display: flex;
@@ -31,6 +32,11 @@
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
+        .message-list > .d-flex,
+        .bubble-user,
+        .bubble-assistant {
+            min-width: 0;
+        }
 
         /* Error bubble */
         .bubble-error {
@@ -44,17 +50,69 @@
             background: rgba(108, 99, 255, 0.06);
         }
 
-        /* Message content preserves newlines without affecting inner components */
+        /* Message content preserves the AI response structure */
         .message-content {
-            white-space: pre-line;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        .bubble-assistant .message-content.is-formatted {
+            white-space: normal;
+        }
+        .bubble-assistant .message-content p {
+            margin: 0 0 0.75rem;
+        }
+        .bubble-assistant .message-content p:last-child,
+        .bubble-assistant .message-content ul:last-child,
+        .bubble-assistant .message-content ol:last-child,
+        .bubble-assistant .message-content blockquote:last-child,
+        .bubble-assistant .message-content pre:last-child {
+            margin-bottom: 0;
+        }
+        .bubble-assistant .message-content ul,
+        .bubble-assistant .message-content ol {
+            margin: 0 0 0.75rem;
+            padding-left: 1.35rem;
+        }
+        .bubble-assistant .message-content li + li {
+            margin-top: 0.3rem;
+        }
+        .bubble-assistant .message-content blockquote {
+            margin: 0 0 0.75rem;
+            padding-left: 0.85rem;
+            border-left: 3px solid rgba(78, 205, 196, 0.55);
+            color: rgba(240, 240, 255, 0.72);
+        }
+        .bubble-assistant .message-content code {
+            padding: 0.12rem 0.35rem;
+            border-radius: 0.35rem;
+            background: rgba(0, 0, 0, 0.24);
+            color: #b9fff9;
+        }
+        .bubble-assistant .message-content pre {
+            overflow-x: auto;
+            margin: 0 0 0.75rem;
+            padding: 0.75rem;
+            border-radius: 0.65rem;
+            background: rgba(0, 0, 0, 0.28);
+        }
+        .bubble-assistant .message-content pre code {
+            padding: 0;
+            background: transparent;
         }
 
         /* Vocabulary badge */
         .vocab-badge {
+            display: inline-block;
+            max-width: 100%;
             background: linear-gradient(135deg, rgba(78, 205, 196, 0.2) 0%, rgba(78, 205, 196, 0.1) 100%);
             border: 1px solid rgba(78, 205, 196, 0.3);
             color: #4ECDC4;
             font-weight: 500;
+            line-height: 1.45;
+            text-align: left;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
 
         /* Text colors */
@@ -236,11 +294,129 @@
             if (list) list.scrollTop = list.scrollHeight;
         }
 
-        document.addEventListener('DOMContentLoaded', function () {
-            // Normalize existing AI message content on load
-            document.querySelectorAll('.message-content').forEach(function (el) {
-                el.textContent = el.textContent.replace(/\n{2,}/g, '\n').trim();
+        function escapeChatHtml(value) {
+            return value
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function formatInlineMarkdown(value) {
+            return escapeChatHtml(value)
+                .replace(/`([^`\n]+)`/g, '<code>$1</code>')
+                .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
+                .replace(/__([^_\n]+)__/g, '<strong>$1</strong>')
+                .replace(/(^|[\s(])\*([^*\n]+)\*(?=$|[\s).,!?:;])/g, '$1<em>$2</em>')
+                .replace(/(^|[\s(])_([^_\n]+)_(?=$|[\s).,!?:;])/g, '$1<em>$2</em>');
+        }
+
+        function renderAssistantContent(element) {
+            if (!element || element.dataset.formatted === 'true') return;
+
+            const source = element.textContent.replace(/\r\n?/g, '\n').trim();
+            if (!source) return;
+
+            const lines = source.split('\n');
+            const blocks = [];
+            let paragraph = [];
+            let listType = null;
+            let listItems = [];
+            let codeLines = [];
+            let inCodeBlock = false;
+
+            function flushParagraph() {
+                if (!paragraph.length) return;
+                blocks.push('<p>' + paragraph.map(formatInlineMarkdown).join('<br>') + '</p>');
+                paragraph = [];
+            }
+
+            function flushList() {
+                if (!listType || !listItems.length) return;
+                blocks.push('<' + listType + '>' +
+                    listItems.map(function (item) {
+                        return '<li>' + formatInlineMarkdown(item) + '</li>';
+                    }).join('') +
+                    '</' + listType + '>');
+                listType = null;
+                listItems = [];
+            }
+
+            lines.forEach(function (line) {
+                const trimmed = line.trim();
+
+                if (trimmed.startsWith('```')) {
+                    flushParagraph();
+                    flushList();
+                    if (inCodeBlock) {
+                        blocks.push('<pre><code>' + escapeChatHtml(codeLines.join('\n')) + '</code></pre>');
+                        codeLines = [];
+                    }
+                    inCodeBlock = !inCodeBlock;
+                    return;
+                }
+
+                if (inCodeBlock) {
+                    codeLines.push(line);
+                    return;
+                }
+
+                if (!trimmed) {
+                    flushParagraph();
+                    flushList();
+                    return;
+                }
+
+                const unorderedMatch = trimmed.match(/^[-*+]\s+(.+)$/);
+                const orderedMatch = trimmed.match(/^\d+[.)]\s+(.+)$/);
+                const nextListType = unorderedMatch ? 'ul' : (orderedMatch ? 'ol' : null);
+
+                if (nextListType) {
+                    flushParagraph();
+                    if (listType && listType !== nextListType) flushList();
+                    listType = nextListType;
+                    listItems.push((unorderedMatch || orderedMatch)[1]);
+                    return;
+                }
+
+                flushList();
+
+                const headingMatch = trimmed.match(/^#{1,3}\s+(.+)$/);
+                if (headingMatch) {
+                    flushParagraph();
+                    blocks.push('<p><strong>' + formatInlineMarkdown(headingMatch[1]) + '</strong></p>');
+                    return;
+                }
+
+                const quoteMatch = trimmed.match(/^>\s?(.*)$/);
+                if (quoteMatch) {
+                    flushParagraph();
+                    blocks.push('<blockquote>' + formatInlineMarkdown(quoteMatch[1]) + '</blockquote>');
+                    return;
+                }
+
+                paragraph.push(line);
             });
+
+            if (inCodeBlock && codeLines.length) {
+                blocks.push('<pre><code>' + escapeChatHtml(codeLines.join('\n')) + '</code></pre>');
+            }
+            flushParagraph();
+            flushList();
+
+            element.innerHTML = blocks.join('');
+            element.dataset.formatted = 'true';
+            element.classList.add('is-formatted');
+        }
+
+        function renderAssistantMessages(root) {
+            const scope = root || document;
+            scope.querySelectorAll('.bubble-assistant .message-content').forEach(renderAssistantContent);
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            renderAssistantMessages(document);
             scrollChatToBottom();
         });
 
@@ -269,13 +445,10 @@
             scrollChatToBottom();
         });
 
-        // Normalize AI message content: collapse 2+ newlines to 1
+        // Format newly appended AI messages without flattening paragraphs or lists
         document.body.addEventListener('htmx:afterSwap', function (event) {
             if (event.detail.target && event.detail.target.id === 'message-list') {
-                // Normalize message content
-                event.detail.target.querySelectorAll('.bubble-assistant .message-content, .bubble-user .message-content').forEach(function (el) {
-                    el.textContent = el.textContent.replace(/\n{2,}/g, '\n').trim();
-                });
+                renderAssistantMessages(event.detail.target);
                 var textarea = document.querySelector('textarea[name="message"]');
                 if (textarea) textarea.value = '';
                 scrollChatToBottom();

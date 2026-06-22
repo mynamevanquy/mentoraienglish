@@ -40,6 +40,7 @@ public class VocabularyService {
 
     private static final BigDecimal DEFAULT_EASINESS_FACTOR = new BigDecimal("2.50");
     private static final ZoneId DEFAULT_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+    public static final int DAILY_NEW_WORD_LIMIT = 10;
 
     private final VocabularyRepository vocabularyRepository;
     private final UserVocabularyRepository userVocabularyRepository;
@@ -84,17 +85,25 @@ public class VocabularyService {
     }
 
     @Transactional(readOnly = true)
-    public List<UserVocabularyDto> getRandomForReview(UUID userId, String level, int limit) {
-        Level parsedLevel = null;
-        if (level != null && !level.isBlank()) {
-            try {
-                parsedLevel = Level.valueOf(level.trim().toUpperCase());
-            } catch (IllegalArgumentException ignored) {}
-        }
-        return userVocabularyRepository.findRandomByUser(userId, parsedLevel, PageRequest.of(0, limit))
+    public List<UserVocabularyDto> getRandomForReview(
+            UUID userId,
+            String level,
+            UUID excludedVocabularyId,
+            int limit) {
+        Level parsedLevel = parseLevel(level);
+        return userVocabularyRepository.findRandomByUserExcluding(
+                        userId,
+                        parsedLevel,
+                        excludedVocabularyId,
+                        PageRequest.of(0, Math.max(1, limit)))
                 .stream()
                 .map(UserVocabularyDto::from)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public long countDueForReview(UUID userId) {
+        return userVocabularyRepository.countByUserIdAndNextReviewAtLessThanEqual(userId, Instant.now());
     }
 
     @Transactional(readOnly = true)
@@ -157,6 +166,22 @@ public class VocabularyService {
     }
 
     @Transactional
+    public UserVocabularyDto learnWord(UUID userId, UUID vocabularyId, int quality) {
+        if (quality != 2 && quality != 4) {
+            throw new IllegalArgumentException("Đánh giá từ mới không hợp lệ.");
+        }
+        var existing = userVocabularyRepository.findByUserIdAndVocabularyId(userId, vocabularyId);
+        if (existing.isPresent()) {
+            return UserVocabularyDto.from(existing.get());
+        }
+        if (getRemainingNewWordsToday(userId) == 0) {
+            throw new IllegalStateException("Bạn đã hoàn thành mục tiêu từ mới hôm nay.");
+        }
+        addToUserList(userId, vocabularyId);
+        return submitReview(userId, vocabularyId, quality);
+    }
+
+    @Transactional
     public VocabularyInfoDto getAiExplanation(UUID userId, UUID vocabularyId) {
         UserVocabulary userVocabulary = userVocabularyRepository.findByUserIdAndVocabularyId(userId, vocabularyId)
                 .orElseGet(() -> {
@@ -183,16 +208,29 @@ public class VocabularyService {
 
     @Transactional(readOnly = true)
     public List<VocabularyDto> getUnlearnedWords(UUID userId, String level, int limit) {
-        Level parsedLevel = null;
-        if (level != null && !level.isBlank()) {
-            try {
-                parsedLevel = Level.valueOf(level.trim().toUpperCase());
-            } catch (IllegalArgumentException ignored) {}
-        }
+        Level parsedLevel = parseLevel(level);
         return vocabularyRepository.findUnlearnedByUser(userId, parsedLevel, PageRequest.of(0, limit))
                 .stream()
                 .map(VocabularyDto::from)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public long countUnlearnedWords(UUID userId, String level) {
+        return vocabularyRepository.countUnlearnedByUser(userId, parseLevel(level));
+    }
+
+    @Transactional(readOnly = true)
+    public long countWordsLearnedToday(UUID userId) {
+        LocalDate today = LocalDate.now(DEFAULT_ZONE);
+        Instant from = today.atStartOfDay(DEFAULT_ZONE).toInstant();
+        Instant to = today.plusDays(1).atStartOfDay(DEFAULT_ZONE).toInstant();
+        return userVocabularyRepository.countByUserIdAndCreatedAtBetween(userId, from, to);
+    }
+
+    @Transactional(readOnly = true)
+    public int getRemainingNewWordsToday(UUID userId) {
+        return Math.max(0, DAILY_NEW_WORD_LIMIT - (int) countWordsLearnedToday(userId));
     }
 
     @Transactional(readOnly = true)
@@ -265,6 +303,17 @@ public class VocabularyService {
     private Vocabulary findVocabulary(UUID id) {
         return vocabularyRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Vocabulary not found: " + id));
+    }
+
+    private Level parseLevel(String level) {
+        if (!StringUtils.hasText(level)) {
+            return null;
+        }
+        try {
+            return Level.valueOf(level.trim().toUpperCase());
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
     }
 
     private int calculateMasteryLevel(int quality, int repetitions, int currentMasteryLevel) {

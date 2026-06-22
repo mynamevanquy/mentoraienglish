@@ -3,6 +3,7 @@ package com.englishai.grammar.controller;
 import com.englishai.ai.dto.GrammarCorrectionResult;
 import com.englishai.ai.dto.GrammarExplanationDto;
 import com.englishai.common.enums.Level;
+import com.englishai.exercise.service.LearnerLevelService;
 import com.englishai.grammar.service.GrammarService;
 import com.englishai.user.entity.User;
 import com.englishai.user.repository.UserRepository;
@@ -26,15 +27,20 @@ import java.util.UUID;
 public class GrammarController {
 
     private final GrammarService grammarService;
+    private final LearnerLevelService learnerLevelService;
     private final UserRepository userRepository;
 
     @GetMapping
     public String index(
             @RequestParam(value = "level", required = false) Level level,
+            Principal principal,
             Model model) {
-        model.addAttribute("topics", grammarService.getPublishedTopics(level));
+        User user = getAuthenticatedUser(principal);
+        Level effectiveLevel = level != null ? level : learnerLevelService.determineLevel(user.getId());
+        model.addAttribute("topics", grammarService.getPublishedTopics(effectiveLevel));
         model.addAttribute("levels", Level.values());
-        model.addAttribute("selectedLevel", level);
+        model.addAttribute("selectedLevel", effectiveLevel);
+        model.addAttribute("adaptiveSelection", level == null);
         return "grammar/index";
     }
 
@@ -64,7 +70,7 @@ public class GrammarController {
         try {
             User user = getAuthenticatedUser(principal);
             var topic = grammarService.getPublishedTopic(id);
-            GrammarExplanationDto explanation = grammarService.explainWithAi(user.getId(), topic.title(), topic.level());
+            GrammarExplanationDto explanation = grammarService.explainWithAi(user.getId(), topic.title());
             model.addAttribute("explanation", explanation);
         } catch (Exception e) {
             model.addAttribute("errorMessage", "Không thể tạo giải thích AI lúc này: " + e.getMessage());

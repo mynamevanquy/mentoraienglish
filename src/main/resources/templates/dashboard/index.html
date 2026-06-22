@@ -82,6 +82,32 @@
             <p class="welcome-subtitle">Hôm nay là một ngày tuyệt vời để nâng cấp trình độ tiếng Anh của bạn.</p>
         </header>
 
+        <div class="dash-card mb-4" th:if="${learnerProfile != null}">
+            <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                <div>
+                    <div class="card-title">Trình độ khuyến nghị nội bộ</div>
+                    <strong th:text="${@messageHelper.level(learnerProfile.level())}">Mới bắt đầu</strong>
+                    <span class="badge text-bg-secondary ms-2"
+                          th:text="${@messageHelper.assessmentStatus(learnerProfile.assessmentStatus())}">
+                        Chưa đủ dữ liệu
+                    </span>
+                </div>
+                <div class="welcome-subtitle"
+                     th:text="${learnerProfile.completedAttempts() + ' bài hợp lệ · điểm có trọng số ' + learnerProfile.averageScore() + '% · độ tin cậy ' + learnerProfile.confidencePercent() + '%'}">
+                    Tiến độ
+                </div>
+            </div>
+            <div class="welcome-subtitle mt-2" th:text="${learnerProfile.recommendationReason()}">Lý do</div>
+            <div class="d-flex gap-2 flex-wrap mt-3" th:if="${!learnerProfile.skillScores().isEmpty()}">
+                <span class="badge text-bg-dark"
+                      th:each="entry : ${learnerProfile.skillScores()}"
+                      th:text="${@messageHelper.learningSkill(entry.key) + ': ' + entry.value + '%'}">Kỹ năng</span>
+            </div>
+            <div class="welcome-subtitle mt-2">
+                Kết quả này dùng để cá nhân hóa nội dung, không thay thế chứng chỉ CEFR chính thức.
+            </div>
+        </div>
+
         <!-- 4 Summary Cards (Loaded asynchronously via HTMX) -->
         <div id="summary-section"
              class="dashboard-grid-stats"

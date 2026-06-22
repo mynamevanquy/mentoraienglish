@@ -1,8 +1,10 @@
 package com.englishai.user.controller;
 
+import com.englishai.common.enums.Level;
 import com.englishai.user.dto.AdminPasswordResetRequest;
 import com.englishai.user.dto.AdminUserCreateRequest;
 import com.englishai.user.dto.AdminUserUpdateRequest;
+import com.englishai.user.dto.AdminUserView;
 import com.englishai.user.entity.Role;
 import com.englishai.user.entity.User;
 import com.englishai.user.service.UserService;
@@ -42,48 +44,49 @@ public class AdminUserController {
 
     @GetMapping
     public String index(@RequestParam(required = false) String keyword,
-                        @RequestParam(required = false) Role role,
-                        @RequestParam(required = false) Boolean enabled,
+                        @RequestParam(required = false) Role filterRole,
+                        @RequestParam(required = false) Boolean filterEnabled,
+                        @RequestParam(required = false) Level filterLearnerLevel,
                         @RequestParam(defaultValue = "0") int page,
                         Model model) {
         Pageable pageable = PageRequest.of(Math.max(page, 0), PAGE_SIZE, Sort.by(Sort.Direction.DESC, "createdAt"));
-        model.addAttribute("users", userService.searchUsers(keyword, role, enabled, pageable));
+        model.addAttribute("users", userService.searchUsers(
+                keyword,
+                filterRole,
+                filterEnabled,
+                filterLearnerLevel,
+                pageable));
         model.addAttribute("keyword", keyword);
-        model.addAttribute("selectedRole", role);
-        model.addAttribute("selectedEnabled", enabled);
+        model.addAttribute("selectedRole", filterRole);
+        model.addAttribute("selectedEnabled", filterEnabled);
+        model.addAttribute("selectedLearnerLevel", filterLearnerLevel);
+        model.addAttribute("learnerLevels", Level.values());
+        model.addAttribute("learnerLevelCounts", userService.countLearnersByLevel());
         prepareFormModel(model);
         return "admin/users/index";
     }
 
     @GetMapping("/{id}/edit")
-    public String edit(@PathVariable UUID id,
-                       @RequestParam(required = false) String keyword,
-                       @RequestParam(required = false) Role role,
-                       @RequestParam(required = false) Boolean enabled,
-                       @RequestParam(defaultValue = "0") int page,
-                       Model model) {
-        User user = userService.getUserForAdmin(id);
-        model.addAttribute("editingUser", user);
-        model.addAttribute("updateRequest", new AdminUserUpdateRequest(
-                user.getFullName(),
-                user.getEmail(),
-                user.getRole(),
-                user.isEnabled()
-        ));
-        model.addAttribute("resetPasswordRequest", new AdminPasswordResetRequest());
-        return index(keyword, role, enabled, page, model);
+    public String edit(@PathVariable UUID id, Model model) {
+        return detail(id, model);
+    }
+
+    @GetMapping("/{id}")
+    public String detail(@PathVariable UUID id, Model model) {
+        prepareDetailModel(id, model);
+        return "admin/users/detail";
     }
 
     @PostMapping
     public String create(@Valid @ModelAttribute("createRequest") AdminUserCreateRequest request,
                          BindingResult bindingResult,
                          @RequestParam(required = false) String keyword,
-                         @RequestParam(required = false) Role role,
-                         @RequestParam(required = false) Boolean enabled,
+                         @RequestParam(required = false) Role filterRole,
+                         @RequestParam(required = false) Boolean filterEnabled,
                          Model model,
                          RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
-            return indexWithSubmittedForm(keyword, role, enabled, model);
+            return indexWithSubmittedForm(keyword, filterRole, filterEnabled, model);
         }
 
         try {
@@ -91,11 +94,11 @@ public class AdminUserController {
             redirectAttributes.addFlashAttribute("successMessage", "Đã tạo người dùng mới.");
         } catch (IllegalArgumentException e) {
             bindingResult.reject("create.error", e.getMessage());
-            return indexWithSubmittedForm(keyword, role, enabled, model);
+            return indexWithSubmittedForm(keyword, filterRole, filterEnabled, model);
         } catch (Exception e) {
             log.error("Unable to create user {}", request.getEmail(), e);
             bindingResult.reject("create.error", "Không thể tạo người dùng. Vui lòng thử lại.");
-            return indexWithSubmittedForm(keyword, role, enabled, model);
+            return indexWithSubmittedForm(keyword, filterRole, filterEnabled, model);
         }
 
         return "redirect:/admin/users";
@@ -109,11 +112,9 @@ public class AdminUserController {
                          Model model,
                          RedirectAttributes redirectAttributes) {
         User editingUser = userService.getUserForAdmin(id);
-        model.addAttribute("editingUser", editingUser);
-        model.addAttribute("resetPasswordRequest", new AdminPasswordResetRequest());
-
         if (bindingResult.hasErrors()) {
-            return index(null, null, null, 0, model);
+            prepareDetailModel(id, model);
+            return "admin/users/detail";
         }
 
         try {
@@ -129,14 +130,16 @@ public class AdminUserController {
             redirectAttributes.addFlashAttribute("successMessage", "Đã cập nhật người dùng.");
         } catch (IllegalArgumentException e) {
             bindingResult.reject("update.error", e.getMessage());
-            return index(null, null, null, 0, model);
+            prepareDetailModel(id, model);
+            return "admin/users/detail";
         } catch (Exception e) {
             log.error("Unable to update user {}", id, e);
             bindingResult.reject("update.error", "Không thể cập nhật người dùng. Vui lòng thử lại.");
-            return index(null, null, null, 0, model);
+            prepareDetailModel(id, model);
+            return "admin/users/detail";
         }
 
-        return "redirect:/admin/users";
+        return "redirect:/admin/users/" + id;
     }
 
     @PostMapping("/{id}/password")
@@ -145,22 +148,14 @@ public class AdminUserController {
                                 BindingResult bindingResult,
                                 Model model,
                                 RedirectAttributes redirectAttributes) {
-        User editingUser = userService.getUserForAdmin(id);
-        model.addAttribute("editingUser", editingUser);
-        model.addAttribute("updateRequest", new AdminUserUpdateRequest(
-                editingUser.getFullName(),
-                editingUser.getEmail(),
-                editingUser.getRole(),
-                editingUser.isEnabled()
-        ));
-
         if (bindingResult.hasErrors()) {
-            return index(null, null, null, 0, model);
+            prepareDetailModel(id, model);
+            return "admin/users/detail";
         }
 
         userService.resetPassword(id, request);
         redirectAttributes.addFlashAttribute("successMessage", "Đã đặt lại mật khẩu.");
-        return "redirect:/admin/users/" + id + "/edit";
+        return "redirect:/admin/users/" + id;
     }
 
     @PostMapping("/{id}/toggle-enabled")
@@ -180,7 +175,7 @@ public class AdminUserController {
         } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
-        return "redirect:/admin/users";
+        return "redirect:/admin/users/" + id;
     }
 
     @PostMapping("/{id}/delete")
@@ -202,15 +197,26 @@ public class AdminUserController {
 
     private String indexWithSubmittedForm(String keyword, Role role, Boolean enabled, Model model) {
         prepareFormModel(model);
-        return index(keyword, role, enabled, 0, model);
+        return index(keyword, role, enabled, null, 0, model);
     }
 
     private void prepareFormModel(Model model) {
         if (!model.containsAttribute("createRequest")) {
             model.addAttribute("createRequest", new AdminUserCreateRequest());
         }
+        model.addAttribute("roles", Role.values());
+    }
+
+    private void prepareDetailModel(UUID id, Model model) {
+        AdminUserView user = userService.getAdminUserView(id);
+        model.addAttribute("user", user);
         if (!model.containsAttribute("updateRequest")) {
-            model.addAttribute("updateRequest", new AdminUserUpdateRequest());
+            model.addAttribute("updateRequest", new AdminUserUpdateRequest(
+                    user.fullName(),
+                    user.email(),
+                    user.role(),
+                    user.enabled()
+            ));
         }
         if (!model.containsAttribute("resetPasswordRequest")) {
             model.addAttribute("resetPasswordRequest", new AdminPasswordResetRequest());

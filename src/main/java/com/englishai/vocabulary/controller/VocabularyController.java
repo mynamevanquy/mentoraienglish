@@ -2,6 +2,7 @@ package com.englishai.vocabulary.controller;
 
 import com.englishai.ai.dto.VocabularyInfoDto;
 import com.englishai.common.enums.Level;
+import com.englishai.exercise.service.LearnerLevelService;
 import com.englishai.user.entity.User;
 import com.englishai.user.repository.UserRepository;
 import com.englishai.vocabulary.dto.UserVocabularyDto;
@@ -39,19 +40,24 @@ public class VocabularyController {
     private final VocabularyService vocabularyService;
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
+    private final LearnerLevelService learnerLevelService;
 
     @GetMapping
     public String index(
             @RequestParam(value = "keyword", required = false) String keyword,
             @RequestParam(value = "level", required = false) String level,
             @PageableDefault(size = 12) Pageable pageable,
+            Principal principal,
             Model model) {
-        Page<VocabularyDto> vocabularies = vocabularyService.searchVocabularies(keyword, level, pageable);
+        User user = getAuthenticatedUser(principal);
+        String effectiveLevel = hasText(level) ? level : learnerLevelService.determineLevel(user.getId()).name();
+        Page<VocabularyDto> vocabularies = vocabularyService.searchVocabularies(keyword, effectiveLevel, pageable);
         model.addAttribute("vocabularies", vocabularies);
         model.addAttribute("keyword", keyword);
-        model.addAttribute("selectedLevel", level);
+        model.addAttribute("selectedLevel", effectiveLevel);
+        model.addAttribute("adaptiveSelection", !hasText(level));
         model.addAttribute("levels", Level.values());
-        model.addAttribute("listBaseUrl", buildListBaseUrl(keyword, level));
+        model.addAttribute("listBaseUrl", buildListBaseUrl(keyword, effectiveLevel));
         return "vocabulary/index";
     }
 
@@ -60,12 +66,15 @@ public class VocabularyController {
             @RequestParam(value = "keyword", required = false) String keyword,
             @RequestParam(value = "level", required = false) String level,
             @PageableDefault(size = 12) Pageable pageable,
+            Principal principal,
             Model model) {
-        Page<VocabularyDto> vocabularies = vocabularyService.searchVocabularies(keyword, level, pageable);
+        User user = getAuthenticatedUser(principal);
+        String effectiveLevel = hasText(level) ? level : learnerLevelService.determineLevel(user.getId()).name();
+        Page<VocabularyDto> vocabularies = vocabularyService.searchVocabularies(keyword, effectiveLevel, pageable);
         model.addAttribute("vocabularies", vocabularies);
         model.addAttribute("keyword", keyword);
-        model.addAttribute("selectedLevel", level);
-        model.addAttribute("listBaseUrl", buildListBaseUrl(keyword, level));
+        model.addAttribute("selectedLevel", effectiveLevel);
+        model.addAttribute("listBaseUrl", buildListBaseUrl(keyword, effectiveLevel));
         return "vocabulary/fragments/vocabulary-list";
     }
 
@@ -90,10 +99,14 @@ public class VocabularyController {
         User user = getAuthenticatedUser(principal);
         Map<String, Long> levelCounts = new LinkedHashMap<>();
         for (Level lv : Level.values()) {
-            List<VocabularyDto> words = vocabularyService.getUnlearnedWords(user.getId(), lv.name(), 1);
-            levelCounts.put(lv.name(), (long) words.size());
+            levelCounts.put(lv.name(), vocabularyService.countUnlearnedWords(user.getId(), lv.name()));
         }
         model.addAttribute("levelCounts", levelCounts);
+        model.addAttribute("recommendedLevel", learnerLevelService.determineLevel(user.getId()).name());
+        model.addAttribute("learnedToday", vocabularyService.countWordsLearnedToday(user.getId()));
+        model.addAttribute("dailyLimit", VocabularyService.DAILY_NEW_WORD_LIMIT);
+        model.addAttribute("remainingToday", vocabularyService.getRemainingNewWordsToday(user.getId()));
+        model.addAttribute("dueCount", vocabularyService.countDueForReview(user.getId()));
         return "vocabulary/learn";
     }
 
@@ -102,19 +115,36 @@ public class VocabularyController {
             @RequestParam(value = "level", required = false) String level,
             Principal principal, Model model) {
         User user = getAuthenticatedUser(principal);
-        List<VocabularyDto> words = vocabularyService.getUnlearnedWords(user.getId(), level, 1);
-        if (!words.isEmpty()) {
-            vocabularyService.addToUserList(user.getId(), UUID.fromString(words.get(0).getId()));
-        }
+        String effectiveLevel = hasText(level) ? level : learnerLevelService.determineLevel(user.getId()).name();
+        int remainingToday = vocabularyService.getRemainingNewWordsToday(user.getId());
+        List<VocabularyDto> words = remainingToday > 0
+                ? vocabularyService.getUnlearnedWords(user.getId(), effectiveLevel, 1)
+                : List.of();
         model.addAttribute("word", words.isEmpty() ? null : words.get(0));
-        model.addAttribute("level", level);
+        model.addAttribute("level", effectiveLevel);
+        model.addAttribute("remainingToday", remainingToday);
+        model.addAttribute("dailyLimitReached", remainingToday == 0);
         return "vocabulary/fragments/learn-card";
+    }
+
+    @PostMapping("/learn/{id}/submit")
+    public String submitLearnedWord(
+            @PathVariable UUID id,
+            @RequestParam("quality") int quality,
+            @RequestParam(value = "level", required = false) String level,
+            Principal principal,
+            Model model) {
+        User user = getAuthenticatedUser(principal);
+        if (vocabularyService.getRemainingNewWordsToday(user.getId()) > 0) {
+            vocabularyService.learnWord(user.getId(), id, quality);
+        }
+        return learnSession(level, principal, model);
     }
 
     @GetMapping("/review")
     public String review(Principal principal, Model model) {
         User user = getAuthenticatedUser(principal);
-        model.addAttribute("dueCount", vocabularyService.getDueForReview(user.getId(), 100).size());
+        model.addAttribute("dueCount", vocabularyService.countDueForReview(user.getId()));
         return "vocabulary/review";
     }
 
@@ -123,6 +153,8 @@ public class VocabularyController {
         User user = getAuthenticatedUser(principal);
         List<UserVocabularyDto> due = vocabularyService.getDueForReview(user.getId(), 1);
         model.addAttribute("userVocabulary", due.isEmpty() ? null : due.get(0));
+        model.addAttribute("reviewMode", "due");
+        model.addAttribute("reviewQualities", List.of(1, 3, 4, 5));
         return "vocabulary/fragments/review-card";
     }
 
@@ -136,9 +168,12 @@ public class VocabularyController {
             @RequestParam(value = "level", required = false) String level,
             Principal principal, Model model) {
         User user = getAuthenticatedUser(principal);
-        List<UserVocabularyDto> words = vocabularyService.getRandomForReview(user.getId(), level, 1);
+        String effectiveLevel = hasText(level) ? level : null;
+        List<UserVocabularyDto> words = vocabularyService.getRandomForReview(user.getId(), effectiveLevel, null, 1);
         model.addAttribute("userVocabulary", words.isEmpty() ? null : words.get(0));
-        model.addAttribute("level", level);
+        model.addAttribute("level", effectiveLevel);
+        model.addAttribute("reviewMode", "random");
+        model.addAttribute("reviewQualities", List.of(1, 3, 4, 5));
         return "vocabulary/fragments/review-card";
     }
 
@@ -147,19 +182,21 @@ public class VocabularyController {
             @PathVariable UUID id,
             @RequestParam("quality") int quality,
             @RequestParam(value = "level", required = false) String level,
+            @RequestParam(value = "mode", required = false, defaultValue = "due") String mode,
             Principal principal,
             Model model) {
         User user = getAuthenticatedUser(principal);
         vocabularyService.submitReview(user.getId(), id, quality);
-        // Load next word directly
         List<UserVocabularyDto> next;
-        if (level != null && !level.isBlank()) {
-            next = vocabularyService.getRandomForReview(user.getId(), level, 1);
+        if ("random".equals(mode)) {
+            next = vocabularyService.getRandomForReview(user.getId(), level, id, 1);
         } else {
             next = vocabularyService.getDueForReview(user.getId(), 1);
         }
         model.addAttribute("userVocabulary", next.isEmpty() ? null : next.get(0));
         model.addAttribute("level", level);
+        model.addAttribute("reviewMode", mode);
+        model.addAttribute("reviewQualities", List.of(1, 3, 4, 5));
         return "vocabulary/fragments/review-card";
     }
 
@@ -296,5 +333,9 @@ public class VocabularyController {
 
     private String encode(String value) {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 }

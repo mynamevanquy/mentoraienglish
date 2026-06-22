@@ -1,6 +1,9 @@
 package com.englishai.user.service;
 
 import com.englishai.auth.dto.RegisterRequest;
+import com.englishai.common.enums.Level;
+import com.englishai.exercise.dto.LearnerProfileDto;
+import com.englishai.exercise.service.LearnerLevelService;
 import com.englishai.user.dto.AdminPasswordResetRequest;
 import com.englishai.user.dto.AdminUserCreateRequest;
 import com.englishai.user.dto.AdminUserUpdateRequest;
@@ -12,6 +15,7 @@ import com.englishai.user.entity.User;
 import com.englishai.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,7 +23,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Business logic for user account management.
@@ -30,28 +39,83 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final LearnerLevelService learnerLevelService;
 
     @Transactional(readOnly = true)
-    public Page<AdminUserView> searchUsers(String keyword, Role role, Boolean enabled, Pageable pageable) {
-        Specification<User> spec = Specification.where(null);
+    public Page<AdminUserView> searchUsers(
+            String keyword,
+            Role role,
+            Boolean enabled,
+            Level learnerLevel,
+            Pageable pageable) {
+        Specification<User> spec = buildAdminSpecification(keyword, role, enabled);
 
+        if (learnerLevel == null) {
+            Page<User> users = userRepository.findAll(spec, pageable);
+            Map<UUID, LearnerProfileDto> profiles = loadLearnerProfiles(users.getContent());
+            return users.map(user -> AdminUserView.from(user, profiles.get(user.getId())));
+        }
+
+        List<User> candidates = userRepository.findAll(spec, pageable.getSort());
+        Map<UUID, LearnerProfileDto> profiles = loadLearnerProfiles(candidates);
+        List<AdminUserView> filtered = candidates.stream()
+                .filter(user -> user.getRole() == Role.USER)
+                .filter(user -> profiles.get(user.getId()).level() == learnerLevel)
+                .map(user -> AdminUserView.from(user, profiles.get(user.getId())))
+                .toList();
+
+        int start = Math.min((int) pageable.getOffset(), filtered.size());
+        int end = Math.min(start + pageable.getPageSize(), filtered.size());
+        return new PageImpl<>(filtered.subList(start, end), pageable, filtered.size());
+    }
+
+    @Transactional(readOnly = true)
+    public Map<Level, Long> countLearnersByLevel() {
+        List<User> learners = userRepository.findAll(
+                (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("role"), Role.USER));
+        Map<UUID, LearnerProfileDto> profiles = loadLearnerProfiles(learners);
+        Map<Level, Long> counts = new EnumMap<>(Level.class);
+        for (Level level : Level.values()) {
+            counts.put(level, 0L);
+        }
+        profiles.values().forEach(profile -> counts.compute(
+                profile.level(),
+                (level, count) -> count == null ? 1L : count + 1));
+        return counts;
+    }
+
+    private Specification<User> buildAdminSpecification(String keyword, Role role, Boolean enabled) {
+        Specification<User> spec = Specification.where(null);
         if (StringUtils.hasText(keyword)) {
             String pattern = "%" + keyword.trim().toLowerCase() + "%";
-            spec = spec.and((root, query, cb) -> cb.or(
-                    cb.like(cb.lower(root.get("fullName")), pattern),
-                    cb.like(cb.lower(root.get("email")), pattern)
-            ));
+            spec = spec.and((root, query, criteriaBuilder) -> criteriaBuilder.or(
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("fullName")), pattern),
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("email")), pattern)));
         }
-
         if (role != null) {
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("role"), role));
+            spec = spec.and((root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("role"), role));
         }
-
         if (enabled != null) {
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("enabled"), enabled));
+            spec = spec.and((root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("enabled"), enabled));
         }
+        return spec;
+    }
 
-        return userRepository.findAll(spec, pageable).map(AdminUserView::from);
+    private Map<UUID, LearnerProfileDto> loadLearnerProfiles(List<User> users) {
+        Set<UUID> learnerIds = users.stream()
+                .filter(user -> user.getRole() == Role.USER)
+                .map(User::getId)
+                .collect(Collectors.toSet());
+        return learnerLevelService.getProfiles(learnerIds);
+    }
+
+    @Transactional(readOnly = true)
+    public AdminUserView getAdminUserView(UUID userId) {
+        User user = getUserForAdmin(userId);
+        LearnerProfileDto learnerProfile = user.getRole() == Role.USER
+                ? learnerLevelService.getProfile(userId)
+                : null;
+        return AdminUserView.from(user, learnerProfile);
     }
 
     @Transactional(readOnly = true)

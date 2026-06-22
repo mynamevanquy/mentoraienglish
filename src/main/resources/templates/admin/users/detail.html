@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/main}">
+<head>
+    <title>Chi tiết người dùng</title>
+    <style>
+        .user-detail { max-width: 1180px; margin: 0 auto; }
+        .detail-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 24px; }
+        .back-link { color: var(--text-secondary); text-decoration: none; font-size: 14px; }
+        .back-link:hover { color: var(--text-primary); }
+        .detail-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(340px, .85fr); gap: 24px; align-items: start; }
+        .panel { padding: 24px; }
+        .identity { display: flex; gap: 18px; align-items: center; }
+        .avatar {
+            width: 68px; height: 68px; border-radius: 18px; display: grid; place-items: center;
+            color: #fff; font-size: 28px; font-weight: 800; background: var(--brand-gradient);
+        }
+        .badge-soft { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 5px 10px; font-size: 12px; font-weight: 600; }
+        .badge-active { color: #52d273; background: rgba(82, 210, 115, .12); border: 1px solid rgba(82, 210, 115, .24); }
+        .badge-disabled { color: #ffb84d; background: rgba(255, 184, 77, .12); border: 1px solid rgba(255, 184, 77, .24); }
+        .badge-role { color: #8fd8ff; background: rgba(143, 216, 255, .12); border: 1px solid rgba(143, 216, 255, .22); }
+        .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 22px; }
+        .stat { padding: 16px; border: 1px solid var(--surface-border); border-radius: 12px; background: rgba(255,255,255,.025); }
+        .stat strong { display: block; font-size: 22px; margin-top: 4px; }
+        .muted { color: var(--text-secondary); }
+        .section-title { font-size: 17px; font-weight: 700; margin-bottom: 16px; }
+        .skill-row + .skill-row { margin-top: 16px; }
+        .skill-track { height: 8px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; margin-top: 7px; }
+        .skill-fill { height: 100%; border-radius: inherit; background: var(--brand-gradient); }
+        .recommendation { margin-top: 20px; padding: 14px 16px; border-radius: 12px; background: rgba(78,205,196,.08); border: 1px solid rgba(78,205,196,.16); }
+        .form-control, .form-select {
+            background: rgba(255,255,255,.03) !important; border: 1px solid var(--surface-border) !important;
+            border-radius: 10px !important; color: var(--text-primary) !important; padding: 11px 14px !important;
+        }
+        .form-select option { color: #111827; }
+        .form-label { color: var(--text-secondary); font-size: 13px; font-weight: 600; }
+        .field-error, .form-error { color: #ff8080; font-size: 12px; margin-top: 6px; }
+        .btn-primary-soft, .btn-ghost, .btn-danger-soft {
+            border-radius: 10px; font-size: 13px; font-weight: 600; display: inline-flex;
+            align-items: center; justify-content: center; gap: 6px; padding: 10px 16px; text-decoration: none;
+        }
+        .btn-primary-soft { background: var(--brand-gradient); color: #fff; border: 0; }
+        .btn-ghost { background: rgba(255,255,255,.04); color: var(--text-primary); border: 1px solid var(--surface-border); }
+        .btn-danger-soft { background: rgba(255,107,107,.1); color: #ff8080; border: 1px solid rgba(255,107,107,.2); }
+        .form-section + .form-section { border-top: 1px solid var(--surface-border); margin-top: 24px; padding-top: 24px; }
+        .meta-list { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+        .meta-item { padding: 12px 14px; border-radius: 10px; background: rgba(255,255,255,.025); }
+        .meta-item span { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 3px; }
+        @media (max-width: 900px) {
+            .detail-grid { grid-template-columns: 1fr; }
+            .stats { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="user-detail">
+        <div class="detail-head">
+            <div>
+                <a class="back-link" th:href="@{/admin/users}"><i class="bi bi-arrow-left"></i> Quay lại danh sách</a>
+                <h1 class="h3 mt-2 mb-1">Hồ sơ người dùng</h1>
+                <p class="muted mb-0">Thông tin tài khoản và năng lực học tập của từng học viên.</p>
+            </div>
+            <form th:action="@{/admin/users/{id}/toggle-enabled(id=${user.id()})}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <button type="submit" class="btn-ghost">
+                    <i class="bi" th:classappend="${user.enabled()} ? 'bi-lock' : 'bi-unlock'"></i>
+                    <span th:text="${user.enabled()} ? 'Khóa tài khoản' : 'Mở khóa tài khoản'">Khóa tài khoản</span>
+                </button>
+            </form>
+        </div>
+
+        <div class="detail-grid">
+            <main>
+                <section class="dash-card panel">
+                    <div class="identity">
+                        <div class="avatar" th:text="${#strings.substring(user.fullName(), 0, 1)}">H</div>
+                        <div>
+                            <h2 class="h4 mb-1" th:text="${user.fullName()}">Học viên</h2>
+                            <div class="muted mb-2" th:text="${user.email()}">student@example.com</div>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <span class="badge-soft badge-role" th:text="${user.roleLabel()}">Học viên</span>
+                                <span class="badge-soft"
+                                      th:classappend="${user.enabled()} ? 'badge-active' : 'badge-disabled'"
+                                      th:text="${user.enabled()} ? 'Đang hoạt động' : 'Đã khóa'">Đang hoạt động</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="meta-list">
+                        <div class="meta-item">
+                            <span>Ngày tạo</span>
+                            <strong th:text="${user.createdAt() != null ? #strings.substring(user.createdAt().toString(), 0, 10) : '-'}">-</strong>
+                        </div>
+                        <div class="meta-item">
+                            <span>Cập nhật gần nhất</span>
+                            <strong th:text="${user.updatedAt() != null ? #strings.substring(user.updatedAt().toString(), 0, 10) : '-'}">-</strong>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="dash-card panel mt-4" th:if="${user.hasLearnerProfile()}">
+                    <div class="d-flex justify-content-between align-items-start gap-3">
+                        <div>
+                            <div class="section-title mb-1">Năng lực học tập</div>
+                            <div class="muted" th:text="${@messageHelper.assessmentStatus(user.learnerProfile().assessmentStatus())}">Trạng thái đánh giá</div>
+                        </div>
+                        <span class="badge-soft badge-role" th:text="${@messageHelper.level(user.learnerProfile().level())}">Trình độ</span>
+                    </div>
+
+                    <div class="stats">
+                        <div class="stat"><span class="muted">Bài đã hoàn thành</span><strong th:text="${user.learnerProfile().completedAttempts()}">0</strong></div>
+                        <div class="stat"><span class="muted">Điểm trung bình</span><strong th:text="${#numbers.formatDecimal(user.learnerProfile().averageScore(), 1, 1) + '%'}">0%</strong></div>
+                        <div class="stat"><span class="muted">Độ tin cậy</span><strong th:text="${user.learnerProfile().confidencePercent() + '%'}">0%</strong></div>
+                    </div>
+
+                    <div class="mt-4" th:if="${!user.learnerProfile().skillScores().isEmpty()}">
+                        <div class="section-title">Điểm theo kỹ năng</div>
+                        <div class="skill-row" th:each="skill : ${user.learnerProfile().skillScores().entrySet()}">
+                            <div class="d-flex justify-content-between">
+                                <span th:text="${@messageHelper.learningSkill(skill.key)}">Kỹ năng</span>
+                                <strong th:text="${#numbers.formatDecimal(skill.value, 1, 1) + '%'}">0%</strong>
+                            </div>
+                            <div class="skill-track">
+                                <div class="skill-fill" th:style="${'width:' + skill.value + '%'}"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="recommendation">
+                        <strong><i class="bi bi-stars"></i> Nhận định hệ thống</strong>
+                        <p class="mb-0 mt-2 muted" th:text="${user.learnerProfile().recommendationReason()}">Nhận định.</p>
+                        <p class="mb-0 mt-2 small"
+                           th:if="${user.learnerProfile().attemptsToNextLevel() > 0}"
+                           th:text="${'Cần thêm ' + user.learnerProfile().attemptsToNextLevel() + ' bài đạt trung bình tối thiểu ' + #numbers.formatDecimal(user.learnerProfile().scoreRequiredForNextLevel(), 1, 1) + '% để xét cấp độ tiếp theo.'}">
+                            Tiến độ cấp độ tiếp theo.
+                        </p>
+                    </div>
+                </section>
+            </main>
+
+            <aside class="dash-card panel">
+                <div class="form-section">
+                    <div class="section-title">Chỉnh sửa tài khoản</div>
+                    <form th:action="@{/admin/users/{id}(id=${user.id()})}" th:object="${updateRequest}" method="post" novalidate>
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                        <div class="form-error mb-3" th:if="${#fields.hasGlobalErrors()}" th:each="err : ${#fields.globalErrors()}" th:text="${err}"></div>
+                        <div class="mb-3">
+                            <label class="form-label" for="fullName">Họ và tên</label>
+                            <input id="fullName" class="form-control" th:field="*{fullName}" autocomplete="name">
+                            <div class="field-error" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="email">Email đăng nhập</label>
+                            <input id="email" type="email" class="form-control" th:field="*{email}" autocomplete="email">
+                            <div class="field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="role">Vai trò</label>
+                            <select id="role" class="form-select" th:field="*{role}">
+                                <option th:each="roleOption : ${roles}" th:value="${roleOption}"
+                                        th:text="${roleOption.name() == 'ADMIN' ? 'Quản trị' : 'Học viên'}">Học viên</option>
+                            </select>
+                            <div class="field-error" th:if="${#fields.hasErrors('role')}" th:errors="*{role}"></div>
+                        </div>
+                        <div class="form-check form-switch mb-4">
+                            <input class="form-check-input" type="checkbox" role="switch" id="enabled" th:field="*{enabled}">
+                            <label class="form-check-label muted" for="enabled">Cho phép đăng nhập</label>
+                        </div>
+                        <button type="submit" class="btn-primary-soft w-100"><i class="bi bi-save"></i> Lưu thay đổi</button>
+                    </form>
+                </div>
+
+                <div class="form-section">
+                    <div class="section-title">Đặt lại mật khẩu</div>
+                    <form th:action="@{/admin/users/{id}/password(id=${user.id()})}"
+                          th:object="${resetPasswordRequest}" method="post" novalidate>
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                        <label class="form-label" for="newPassword">Mật khẩu mới</label>
+                        <input id="newPassword" type="password" class="form-control" th:field="*{newPassword}"
+                               placeholder="Tối thiểu 8 ký tự" autocomplete="new-password">
+                        <div class="field-error" th:if="${#fields.hasErrors('newPassword')}" th:errors="*{newPassword}"></div>
+                        <button type="submit" class="btn-ghost w-100 mt-3"><i class="bi bi-key"></i> Cập nhật mật khẩu</button>
+                    </form>
+                </div>
+
+                <div class="form-section">
+                    <div class="section-title text-danger">Xóa tài khoản</div>
+                    <p class="muted small">Tài khoản sẽ bị xóa khỏi danh sách và các phiên đăng nhập hiện tại sẽ kết thúc.</p>
+                    <form th:action="@{/admin/users/{id}/delete(id=${user.id()})}" method="post"
+                          onsubmit="return confirm('Xóa người dùng này?');">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                        <button type="submit" class="btn-danger-soft w-100"><i class="bi bi-trash"></i> Xóa người dùng</button>
+                    </form>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', () => {
+            const successMsg = [[${successMessage}]];
+            const errorMsg = [[${errorMessage}]];
+            if (successMsg) showAppToast(successMsg, 'success');
+            if (errorMsg) showAppToast(errorMsg, 'error');
+        });
+    </script>
+</div>
+</body>
+</html>

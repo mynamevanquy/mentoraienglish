@@ -2,8 +2,14 @@
     <!-- No more words -->
     <div th:if="${word == null}" class="dash-card text-center py-5">
         <i class="bi bi-check2-circle display-5 text-success"></i>
-        <h2 class="h4 mt-3">Hoàn thành!</h2>
-        <p class="vocab-muted mb-3">Bạn đã học hết tất cả từ vựng trong cấp độ này.</p>
+        <h2 class="h4 mt-3" th:text="${dailyLimitReached} ? 'Đủ mục tiêu hôm nay!' : 'Hoàn thành cấp độ!'">Hoàn thành!</h2>
+        <p class="vocab-muted mb-3"
+           th:text="${dailyLimitReached} ? 'Dừng đúng lúc giúp não có thời gian củng cố từ mới. Hãy chuyển sang ôn tập.' : 'Bạn đã học hết tất cả từ vựng trong cấp độ này.'">
+            Hoàn thành phiên học.
+        </p>
+        <a class="btn btn-primary me-2" th:href="@{/vocabulary/review}" th:if="${dailyLimitReached}">
+            <i class="bi bi-arrow-repeat"></i> Chuyển sang ôn tập
+        </a>
         <a class="btn btn-outline-light" th:href="@{/vocabulary/learn}">
             <i class="bi bi-arrow-left"></i> Chọn cấp độ khác
         </a>
@@ -11,55 +17,70 @@
 
     <!-- Word card -->
     <article th:if="${word != null}" class="dash-card mx-auto" style="max-width: 720px;">
-        <div class="text-center mb-2">
-            <span class="badge bg-success"><i class="bi bi-check-circle"></i> Đã lưu vào danh sách</span>
-        </div>
-
         <div class="text-center mb-4">
+            <span class="badge text-bg-info mb-3">Còn <span th:text="${remainingToday}">0</span> từ trong mục tiêu hôm nay</span>
             <div class="vocab-muted mb-2" th:text="${word.pronunciation ?: ''}"></div>
             <h2 class="display-5 fw-bold" th:text="${word.word}">word</h2>
-            <span class="badge bg-secondary mb-2" th:text="${word.partOfSpeech}">noun</span>
-            <p class="lead mb-1" th:text="${word.definitionEn}">Definition</p>
-            <p class="vocab-muted mb-0" th:text="${word.definitionVi}">Nghĩa</p>
+            <p class="vocab-muted mb-0">Hãy thử đoán nghĩa và đặt một câu trong đầu trước khi xem đáp án.</p>
         </div>
 
-        <!-- Examples -->
-        <div th:if="${word.examples != null && !word.examples.isEmpty()}" class="mb-4">
-            <h6 class="text-uppercase small vocab-muted mb-2">Ví dụ</h6>
-            <div th:each="ex : ${word.examples}" class="mb-2">
-                <p class="mb-0 fst-italic" th:text="${ex.get('en') ?: ex.get('sentence') ?: ''}">Example sentence</p>
-                <p class="vocab-muted small mb-0" th:text="${ex.get('vi') ?: ex.get('translation') ?: ''}">Translation</p>
-            </div>
-        </div>
-
-        <!-- Synonyms & Antonyms -->
-        <div class="row mb-4" th:if="${(word.synonyms != null && !word.synonyms.isEmpty()) || (word.antonyms != null && !word.antonyms.isEmpty())}">
-            <div class="col-6" th:if="${word.synonyms != null && !word.synonyms.isEmpty()}">
-                <h6 class="text-uppercase small vocab-muted mb-2">Từ đồng nghĩa</h6>
-                <div>
-                    <span th:each="s : ${word.synonyms}" class="badge bg-dark me-1 mb-1" th:text="${s}">syn</span>
-                </div>
-            </div>
-            <div class="col-6" th:if="${word.antonyms != null && !word.antonyms.isEmpty()}">
-                <h6 class="text-uppercase small vocab-muted mb-2">Từ trái nghĩa</h6>
-                <div>
-                    <span th:each="a : ${word.antonyms}" class="badge bg-dark me-1 mb-1" th:text="${a}">ant</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Next button -->
-        <div class="d-flex justify-content-center">
-            <button class="btn btn-primary btn-lg"
-                    th:attr="hx-get=@{/vocabulary/learn/session(level=${level})}"
-                    hx-target="#learn-area"
-                    hx-swap="innerHTML">
-                <i class="bi bi-arrow-right"></i> Từ tiếp theo
+        <div class="text-center my-4" id="learn-reveal-action">
+            <button type="button" class="btn btn-primary btn-lg"
+                    onclick="document.getElementById('learn-answer').classList.remove('d-none'); document.getElementById('learn-reveal-action').classList.add('d-none');">
+                <i class="bi bi-eye"></i> Xem nghĩa và ví dụ
             </button>
         </div>
 
-        <div class="text-center mt-3">
-            <small class="vocab-muted">Từ này đã được lưu vào danh sách để ôn tập sau</small>
+        <div id="learn-answer" class="d-none border-top border-secondary-subtle pt-4">
+            <div class="text-center mb-4">
+                <span class="badge bg-secondary mb-2" th:text="${word.partOfSpeech}">noun</span>
+                <p class="lead mb-1" th:text="${word.definitionEn}">Definition</p>
+                <p class="vocab-muted fs-5 mb-0" th:text="${word.definitionVi}">Nghĩa</p>
+            </div>
+
+            <div th:if="${word.examples != null && !word.examples.isEmpty()}" class="mb-4">
+                <h6 class="text-uppercase small vocab-muted mb-2">Ví dụ trong ngữ cảnh</h6>
+                <div th:each="ex : ${word.examples}" class="mb-2">
+                    <p class="mb-0 fst-italic" th:text="${ex.get('en') ?: ex.get('sentence') ?: ''}">Example sentence</p>
+                    <p class="vocab-muted small mb-0" th:text="${ex.get('vi') ?: ex.get('translation') ?: ''}">Translation</p>
+                </div>
+            </div>
+
+            <div class="row mb-4" th:if="${(word.synonyms != null && !word.synonyms.isEmpty()) || (word.antonyms != null && !word.antonyms.isEmpty())}">
+                <div class="col-6" th:if="${word.synonyms != null && !word.synonyms.isEmpty()}">
+                    <h6 class="text-uppercase small vocab-muted mb-2">Từ đồng nghĩa</h6>
+                    <span th:each="s : ${word.synonyms}" class="badge bg-dark me-1 mb-1" th:text="${s}">syn</span>
+                </div>
+                <div class="col-6" th:if="${word.antonyms != null && !word.antonyms.isEmpty()}">
+                    <h6 class="text-uppercase small vocab-muted mb-2">Từ trái nghĩa</h6>
+                    <span th:each="a : ${word.antonyms}" class="badge bg-dark me-1 mb-1" th:text="${a}">ant</span>
+                </div>
+            </div>
+
+            <p class="text-center vocab-muted mb-3">Sau khi xem đáp án, bạn thấy từ này thế nào?</p>
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                <form th:action="@{/vocabulary/learn/{id}/submit(id=${word.id})}" method="post"
+                      th:attr="hx-post=@{/vocabulary/learn/{id}/submit(id=${word.id})}"
+                      hx-target="#learn-area" hx-swap="innerHTML">
+                    <input type="hidden" name="quality" value="2">
+                    <input type="hidden" name="level" th:value="${level}">
+                    <button class="btn btn-outline-warning btn-lg" type="submit">
+                        <i class="bi bi-arrow-counterclockwise"></i> Chưa nhớ
+                    </button>
+                </form>
+                <form th:action="@{/vocabulary/learn/{id}/submit(id=${word.id})}" method="post"
+                      th:attr="hx-post=@{/vocabulary/learn/{id}/submit(id=${word.id})}"
+                      hx-target="#learn-area" hx-swap="innerHTML">
+                    <input type="hidden" name="quality" value="4">
+                    <input type="hidden" name="level" th:value="${level}">
+                    <button class="btn btn-success btn-lg" type="submit">
+                        <i class="bi bi-check2"></i> Đã hiểu
+                    </button>
+                </form>
+            </div>
+            <div class="text-center mt-3">
+                <small class="vocab-muted">“Chưa nhớ” sẽ được ôn lại sớm; “Đã hiểu” sẽ được nhắc lại vào ngày mai.</small>
+            </div>
         </div>
     </article>
 </div>

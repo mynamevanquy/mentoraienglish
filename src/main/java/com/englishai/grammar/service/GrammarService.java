@@ -4,6 +4,7 @@ import com.englishai.ai.dto.GrammarCorrectionResult;
 import com.englishai.ai.dto.GrammarExplanationDto;
 import com.englishai.ai.service.AiService;
 import com.englishai.common.enums.Level;
+import com.englishai.exercise.service.LearnerLevelService;
 import com.englishai.grammar.dto.GrammarTopicDto;
 import com.englishai.grammar.entity.GrammarTopic;
 import com.englishai.grammar.repository.GrammarTopicRepository;
@@ -29,6 +30,7 @@ public class GrammarService {
     private final GrammarTopicRepository grammarTopicRepository;
     private final AiService aiService;
     private final ObjectMapper objectMapper;
+    private final LearnerLevelService learnerLevelService;
 
     @Transactional(readOnly = true)
     public List<GrammarTopicDto> getPublishedTopics(Level level) {
@@ -52,8 +54,8 @@ public class GrammarService {
         return aiService.correctGrammar(userId, text.trim()).join();
     }
 
-    public GrammarExplanationDto explainWithAi(UUID userId, String topic, Level level) {
-        String userLevel = level == null ? Level.INTERMEDIATE.name() : level.name();
+    public GrammarExplanationDto explainWithAi(UUID userId, String topic) {
+        String userLevel = learnerLevelService.determineLevel(userId).name();
         return aiService.explainGrammar(userId, topic, userLevel).join();
     }
 

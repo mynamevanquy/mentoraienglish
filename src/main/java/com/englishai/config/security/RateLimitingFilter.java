@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Servlet filter that applies Bucket4j in-memory rate limiting to
- * {@code POST /login} and {@code POST /register}.
+ * public authentication endpoints.
  * <p>
  * Limit: 10 requests per minute per client IP.
  * Excess requests receive HTTP 429 with a plain-text message.
@@ -34,11 +34,14 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        // Only rate-limit POST to /login and /register
+        // Only rate-limit POST requests that can be abused anonymously.
         String method = request.getMethod();
         String path = request.getServletPath();
         return !"POST".equalsIgnoreCase(method)
-                || (!"/login".equals(path) && !"/register".equals(path));
+                || (!"/login".equals(path)
+                && !"/register".equals(path)
+                && !"/forgot-password".equals(path)
+                && !"/reset-password".equals(path));
     }
 
     @Override

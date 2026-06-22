@@ -12,6 +12,7 @@ import com.englishai.conversation.entity.Conversation;
 import com.englishai.conversation.entity.ConversationMessage;
 import com.englishai.conversation.repository.ConversationMessageRepository;
 import com.englishai.conversation.repository.ConversationRepository;
+import com.englishai.exercise.service.LearnerLevelService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -36,6 +37,7 @@ public class AiService {
     private final ConversationRepository conversationRepository;
     private final ConversationMessageRepository conversationMessageRepository;
     private final GroqAiProperties groqAiProperties;
+    private final LearnerLevelService learnerLevelService;
 
     private void checkRateLimit(UUID userId) {
         if (!tokenUsageTracker.canMakeRequest(userId)) {
@@ -92,7 +94,10 @@ public class AiService {
             conversationMessageRepository.save(userMsgEntity);
 
             // Construct prompt
-            String systemPrompt = promptBuilder.buildTutorPrompt(historyStr.toString(), userMessage, "INTERMEDIATE");
+            String systemPrompt = promptBuilder.buildTutorPrompt(
+                    historyStr.toString(),
+                    userMessage,
+                    learnerLevelService.determineLevel(userId).name());
 
             List<GroqAiRequest.Message> messages = new ArrayList<>();
             messages.add(new GroqAiRequest.Message("system", systemPrompt));
@@ -210,7 +215,9 @@ public class AiService {
         try {
             checkRateLimit(userId);
 
-            String prompt = promptBuilder.buildVocabularyExplanationPrompt(word);
+            String prompt = promptBuilder.buildVocabularyExplanationPrompt(
+                    word,
+                    learnerLevelService.determineLevel(userId).name());
 
             GroqAiRequest apiRequest = new GroqAiRequest(
                     groqAiProperties.getModel(),
@@ -243,7 +250,9 @@ public class AiService {
         try {
             checkRateLimit(userId);
 
-            String prompt = promptBuilder.buildGrammarCorrectionPrompt(text);
+            String prompt = promptBuilder.buildGrammarCorrectionPrompt(
+                    text,
+                    learnerLevelService.determineLevel(userId).name());
 
             GroqAiRequest apiRequest = new GroqAiRequest(
                     groqAiProperties.getModel(),

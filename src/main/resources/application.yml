@@ -61,6 +61,18 @@ spring:
       ssl:
         enabled: ${REDIS_SSL_ENABLED:false}
 
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:false}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS:false}
+
 server:
   port: ${SERVER_PORT:8081}
   error:
@@ -93,6 +105,30 @@ logging:
 app:
   security:
     remember-me-key: ${APP_SECURITY_REMEMBER_ME_KEY:mentorAIDefaultKey-changeMeInProd}
+  password-reset:
+    base-url: ${APP_BASE_URL:http://localhost:${SERVER_PORT:8081}}
+    token-validity: ${PASSWORD_RESET_TOKEN_VALIDITY:30m}
+    from-email: ${MAIL_FROM:no-reply@mentorai.local}
+    mail-enabled: ${PASSWORD_RESET_MAIL_ENABLED:false}
+  adaptive-learning:
+    enabled: ${ADAPTIVE_LEARNING_ENABLED:true}
+    default-level: ${ADAPTIVE_LEARNING_DEFAULT_LEVEL:BEGINNER}
+    minimum-evidence-attempts: ${ADAPTIVE_MIN_EVIDENCE_ATTEMPTS:3}
+    established-minimum-attempts: ${ADAPTIVE_ESTABLISHED_MIN_ATTEMPTS:10}
+    recent-attempt-window: ${ADAPTIVE_RECENT_ATTEMPT_WINDOW:10}
+    older-attempt-weight: ${ADAPTIVE_OLDER_ATTEMPT_WEIGHT:0.5}
+    maximum-score-weight: ${ADAPTIVE_MAXIMUM_SCORE_WEIGHT:10}
+    minimum-seconds-per-point: ${ADAPTIVE_MINIMUM_SECONDS_PER_POINT:2}
+    intermediate:
+      minimum-attempts: ${ADAPTIVE_INTERMEDIATE_MIN_ATTEMPTS:5}
+      minimum-average-score: ${ADAPTIVE_INTERMEDIATE_MIN_SCORE:80}
+      minimum-skill-areas: ${ADAPTIVE_INTERMEDIATE_MIN_SKILL_AREAS:2}
+      minimum-skill-score: ${ADAPTIVE_INTERMEDIATE_MIN_SKILL_SCORE:50}
+    advanced:
+      minimum-attempts: ${ADAPTIVE_ADVANCED_MIN_ATTEMPTS:8}
+      minimum-average-score: ${ADAPTIVE_ADVANCED_MIN_SCORE:80}
+      minimum-skill-areas: ${ADAPTIVE_ADVANCED_MIN_SKILL_AREAS:3}
+      minimum-skill-score: ${ADAPTIVE_ADVANCED_MIN_SKILL_SCORE:60}
 
 bucket4j:
   enabled: true

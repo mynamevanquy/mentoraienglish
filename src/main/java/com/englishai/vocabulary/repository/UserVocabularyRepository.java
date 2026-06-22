@@ -37,12 +37,18 @@ public interface UserVocabularyRepository extends JpaRepository<UserVocabulary, 
 
     long countByUserIdAndNextReviewAtLessThanEqual(UUID userId, Instant now);
 
+    long countByUserIdAndCreatedAtBetween(UUID userId, Instant from, Instant to);
+
     @Query("SELECT uv FROM UserVocabulary uv JOIN FETCH uv.vocabulary v " +
-           "WHERE uv.user.id = :userId AND (:level IS NULL OR v.difficultyLevel = :level) " +
+           "WHERE uv.user.id = :userId " +
+           "AND (:level IS NULL OR v.difficultyLevel = :level) " +
+           "AND (:excludedVocabularyId IS NULL OR v.id <> :excludedVocabularyId) " +
            "ORDER BY FUNCTION('RANDOM')")
-    List<UserVocabulary> findRandomByUser(@Param("userId") UUID userId,
-                                          @Param("level") Level level,
-                                          Pageable pageable);
+    List<UserVocabulary> findRandomByUserExcluding(
+            @Param("userId") UUID userId,
+            @Param("level") Level level,
+            @Param("excludedVocabularyId") UUID excludedVocabularyId,
+            Pageable pageable);
 
     long countByUserId(UUID userId);
 
